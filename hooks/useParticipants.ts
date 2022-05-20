@@ -1,0 +1,13 @@
+import { RemoteParticipant } from "@mux/spaces";
+import { useContext } from "react";
+
+import { MuxContext } from "./MuxContext";
+
+/**
+ * Returns an array of participants passed to or created by closest <SpaceProvider>.
+ */
+export const useParticipants = (): RemoteParticipant[] | undefined => {
+  const mux = useContext(MuxContext);
+
+  return mux?.participants;
+};
