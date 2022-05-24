@@ -4,7 +4,7 @@ import {
   CreateLocalMediaOptions,
   LocalTrackOptions,
   TrackKind,
-} from "@mux/spaces";
+} from "@mux/spaces-web";
 import { useLocalParticipant } from "hooks/useLocalParticipant";
 import { useLocalStorage } from "hooks/useLocalStorage";
 

@@ -1,4 +1,4 @@
-import { RemoteParticipant } from "@mux/spaces";
+import { RemoteParticipant } from "@mux/spaces-web";
 import { useContext } from "react";
 
 import { MuxContext } from "./MuxContext";

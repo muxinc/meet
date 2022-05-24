@@ -1,6 +1,6 @@
 import React from "react";
 import { Box } from "@chakra-ui/react";
-import { LocalParticipant, RemoteParticipant } from "@mux/spaces";
+import { LocalParticipant, RemoteParticipant } from "@mux/spaces-web";
 
 import MuteIndicator from "./MuteIndicator";
 

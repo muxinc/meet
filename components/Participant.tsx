@@ -1,6 +1,10 @@
 import React from "react";
 import { Box, Center, GridItem } from "@chakra-ui/react";
-import { LocalParticipant, RemoteParticipant, TrackSource } from "@mux/spaces";
+import {
+  LocalParticipant,
+  RemoteParticipant,
+  TrackSource,
+} from "@mux/spaces-web";
 
 import { useParticipant } from "hooks/useParticipant";
 import AudioRenderer from "./renderers/AudioRenderer";

@@ -1,10 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import { NextApiRequest, NextApiResponse } from "next";
 
-const {
-  MUX_TOKEN_ID,
-  MUX_TOKEN_SECRET,
-} = process.env;
+const { MUX_TOKEN_ID, MUX_TOKEN_SECRET } = process.env;
 
 const fetchSpaces = async () => {
   const auth = Buffer.from(`${MUX_TOKEN_ID}:${MUX_TOKEN_SECRET}`).toString(

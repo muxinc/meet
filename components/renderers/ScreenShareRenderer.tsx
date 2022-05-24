@@ -1,6 +1,6 @@
 import { Flex } from "@chakra-ui/react";
 import React, { useEffect, useRef } from "react";
-import { Track } from "@mux/spaces";
+import { Track } from "@mux/spaces-web";
 
 interface Props {
   track: Track;
