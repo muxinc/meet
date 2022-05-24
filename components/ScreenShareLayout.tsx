@@ -1,7 +1,7 @@
 import Split from "react-split";
 import { useEffect, useState } from "react";
 import { Flex } from "@chakra-ui/react";
-import { Track } from "@mux/spaces";
+import { Track } from "@mux/spaces-web";
 
 import { useParticipants } from "hooks/useParticipants";
 import { useLocalParticipant } from "hooks/useLocalParticipant";
@@ -56,10 +56,7 @@ export default function ScreenShareLayout({
 
         <Flex direction="column" overflowY="scroll">
           {localParticipant && (
-            <MinimalParticipant
-              local={true}
-              participant={localParticipant}
-            />
+            <MinimalParticipant local={true} participant={localParticipant} />
           )}
           {sortedParticipants.map((participant) => {
             return (

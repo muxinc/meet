@@ -1,4 +1,4 @@
-import { LocalParticipant } from "@mux/spaces";
+import { LocalParticipant } from "@mux/spaces-web";
 import { useContext } from "react";
 
 import { MuxContext } from "./MuxContext";

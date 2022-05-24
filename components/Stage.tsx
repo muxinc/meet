@@ -18,7 +18,7 @@ import {
   Track,
   TrackKind,
   TrackSource,
-} from "@mux/spaces";
+} from "@mux/spaces-web";
 
 import { useSpace } from "hooks/useSpace";
 import { useLocalParticipant } from "hooks/useLocalParticipant";

@@ -1,4 +1,4 @@
-import { LocalParticipant, RemoteParticipant, Space } from "@mux/spaces";
+import { LocalParticipant, RemoteParticipant, Space } from "@mux/spaces-web";
 import { createContext } from "react";
 
 interface Mux {

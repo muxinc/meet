@@ -7,7 +7,7 @@ import {
   ParticipantEvent,
   TrackKind,
   TrackSource,
-} from "@mux/spaces";
+} from "@mux/spaces-web";
 import { useLocalParticipant } from "hooks/useLocalParticipant";
 import { AiOutlineCheck } from "react-icons/ai";
 

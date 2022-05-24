@@ -1,5 +1,5 @@
 import { AspectRatio } from "@chakra-ui/react";
-import { Track } from "@mux/spaces";
+import { Track } from "@mux/spaces-web";
 import React, { useEffect, useRef } from "react";
 import poster from "../../public/poster.jpg";
 import posterFlipped from "../../public/poster-flipped.jpg";

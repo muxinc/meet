@@ -4,7 +4,7 @@ import {
   RemoteParticipant,
   Space,
   SpaceEvent,
-} from "@mux/spaces";
+} from "@mux/spaces-web";
 
 import { MuxContext } from "./MuxContext";
 

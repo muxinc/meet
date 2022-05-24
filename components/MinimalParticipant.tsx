@@ -1,6 +1,10 @@
 import React from "react";
 import { Box, Center, IconButton } from "@chakra-ui/react";
-import { LocalParticipant, RemoteParticipant, TrackSource } from "@mux/spaces";
+import {
+  LocalParticipant,
+  RemoteParticipant,
+  TrackSource,
+} from "@mux/spaces-web";
 import { MdOutlinePushPin, MdPushPin } from "react-icons/md";
 
 import { useParticipant } from "hooks/useParticipant";

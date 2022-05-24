@@ -4,7 +4,7 @@ import {
   RemoteParticipant,
   Track,
   TrackSource,
-} from "@mux/spaces";
+} from "@mux/spaces-web";
 import { useCallback, useEffect, useState } from "react";
 import { useSpace } from "./useSpace";
 

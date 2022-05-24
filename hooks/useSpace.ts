@@ -1,4 +1,4 @@
-import { Space } from "@mux/spaces";
+import { Space } from "@mux/spaces-web";
 import { useContext } from "react";
 
 import { MuxContext } from "./MuxContext";

@@ -1,4 +1,4 @@
-import { Track } from "@mux/spaces";
+import { Track } from "@mux/spaces-web";
 import { useEffect, useRef } from "react";
 
 interface AudioTrackProps {
