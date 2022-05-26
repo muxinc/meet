@@ -16,7 +16,7 @@ export default function Gallery(): JSX.Element {
 
   return (
     <Box
-      width="80%"
+      width="100%"
       height="100%"
       marginInline="auto"
       display="flex"
@@ -26,14 +26,12 @@ export default function Gallery(): JSX.Element {
       zIndex={100}
     >
       <Grid
+        width="100%"
+        maxHeight="100%"
         templateColumns={`repeat(${numCols}, 1fr)`}
         templateRows={`repeat(${numRows}, 1fr)`}
         gridGap="2"
-        padding="2"
-        sx={{
-          width: "100%",
-          perspective: "600px",
-        }}
+        padding="20px"
       >
         <LocalView />
         {participants?.map((participant) => {

@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Center, GridItem } from "@chakra-ui/react";
+import { Center, GridItem } from "@chakra-ui/react";
 import {
   LocalParticipant,
   RemoteParticipant,
@@ -48,33 +48,31 @@ export default function Participant({
         },
       }}
     >
-      <Box width="100%" height="100%" position="relative" borderRadius="5px">
-        {!local && micTrack && <AudioRenderer track={micTrack} />}
+      {!local && micTrack && <AudioRenderer track={micTrack} />}
 
-        {cameraTrack && (
-          <VideoRenderer
-            connectionId={participant.connectionId}
-            local={local}
-            track={cameraTrack}
-          />
-        )}
+      {cameraTrack && (
+        <VideoRenderer
+          connectionId={participant.connectionId}
+          local={local}
+          track={cameraTrack}
+        />
+      )}
 
-        <ParticipantInfoBar isMuted={isMuted} participant={participant} />
+      <ParticipantInfoBar isMuted={isMuted} participant={participant} />
 
-        {(isCameraOff || !cameraTrack) && (
-          <Center
-            background="black"
-            color="white"
-            fontSize="45px"
-            h="100%"
-            position="absolute"
-            top="0"
-            w="100%"
-          >
-            {participant.id}
-          </Center>
-        )}
-      </Box>
+      {(isCameraOff || !cameraTrack) && (
+        <Center
+          background="black"
+          color="white"
+          fontSize="45px"
+          h="100%"
+          position="absolute"
+          top="0"
+          w="100%"
+        >
+          {participant.id}
+        </Center>
+      )}
     </GridItem>
   );
 }
