@@ -32,12 +32,7 @@ export default function VideoRenderer({
   }, [track.track]);
 
   return (
-    <AspectRatio
-      ratio={16 / 9}
-      position="relative"
-      maxHeight="720px"
-      height="100%"
-    >
+    <AspectRatio ratio={16 / 9} height="100%">
       <video
         id={connectionId}
         poster={local ? posterFlipped.src : poster.src}
@@ -45,7 +40,6 @@ export default function VideoRenderer({
         autoPlay
         playsInline
         style={{
-          maxHeight: "720px",
           transform: local ? "scaleX(-1)" : "",
         }}
       />
