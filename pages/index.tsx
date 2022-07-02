@@ -83,7 +83,7 @@ const Home = () => {
     <>
       <Head>
         <title>Mux Meet</title>
-        <meta name="description" content="Real-time meetings powered by Mux" />
+        <meta name="description" content="A meeting app built on Mux Spaces" />
         <link rel="icon" href="/favicon.png" />
       </Head>
 

@@ -12,11 +12,7 @@ import Stage from "components/Stage";
 import UserInteractionPrompt from "components/UserInteractionPrompt";
 import UserContext from "context/user";
 
-interface Props {
-  spaceBackendURL: string;
-}
-
-const SpacePage: NextPage<Props> = ({ spaceBackendURL }: Props) => {
+const SpacePage: NextPage = () => {
   const router = useRouter();
   const { isReady: isRouterReady } = router;
   const { id } = router.query;
@@ -59,7 +55,7 @@ const SpacePage: NextPage<Props> = ({ spaceBackendURL }: Props) => {
     <>
       <Head>
         <title>Mux Meet Space</title>
-        <meta name="description" content="This is your space room" />
+        <meta name="description" content="A meeting app built on Mux Spaces" />
         <link rel="icon" href="/favicon.png" />
       </Head>
 
