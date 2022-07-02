@@ -1,5 +1,6 @@
 import React from "react";
-import { Center, GridItem } from "@chakra-ui/react";
+import { Box, Center } from "@chakra-ui/react";
+import { motion } from "framer-motion";
 import {
   LocalParticipant,
   RemoteParticipant,
@@ -7,49 +8,52 @@ import {
 } from "@mux/spaces-web";
 
 import { useParticipant } from "hooks/useParticipant";
-import AudioRenderer from "./renderers/AudioRenderer";
 import VideoRenderer from "./renderers/VideoRenderer";
 import ParticipantInfoBar from "./ParticipantInfoBar";
 
 interface Props {
+  width?: number;
+  height?: number;
   participant: LocalParticipant | RemoteParticipant;
   local: boolean;
 }
 
 export default function Participant({
+  width,
+  height,
   participant,
   local = false,
 }: Props): JSX.Element {
   const { isMuted, isSpeaking, isCameraOff, subscribedTracks } =
     useParticipant(participant);
 
-  const micTrack = subscribedTracks.find(
-    (track) => track.source === TrackSource.Microphone
-  );
-
   const cameraTrack = subscribedTracks.find(
     (track) => track.source === TrackSource.Camera
   );
 
+  const outlineWidth = 3;
+
   return (
-    <GridItem
+    <Box
+      layout
+      layoutId={participant.connectionId}
+      as={motion.div}
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      exit={{ scale: 0 }}
+      width={`${width! - outlineWidth * 2}px`}
+      height={`${height! - outlineWidth * 2}px`}
+      minWidth="160px"
+      minHeight="90px"
       background="black"
-      border="3px solid"
-      borderColor={`${isSpeaking ? "#FB2491" : "black"}`}
+      outline={`${isSpeaking ? `${outlineWidth}px solid` : "1px solid"}`}
+      outlineColor={`${isSpeaking ? "#FB2491" : "black"}`}
       borderRadius="5px"
+      margin={`${outlineWidth}px`}
       overflow="hidden"
       position="relative"
       role="group"
-      textAlign="center"
-      width="100%"
-      sx={{
-        "&:hover": {
-          boxShadow: "0 0 15px 5px var(--chakra-colors-grey600)",
-        },
-      }}
     >
-      {!local && micTrack && <AudioRenderer track={micTrack} />}
-
       {cameraTrack && (
         <VideoRenderer
           connectionId={participant.connectionId}
@@ -58,7 +62,11 @@ export default function Participant({
         />
       )}
 
-      <ParticipantInfoBar isMuted={isMuted} participant={participant} />
+      <ParticipantInfoBar
+        isMuted={isMuted}
+        participant={participant}
+        parentHeight={height!}
+      />
 
       {(isCameraOff || !cameraTrack) && (
         <Center
@@ -70,9 +78,9 @@ export default function Participant({
           top="0"
           w="100%"
         >
-          {participant.id}
+          {participant.id.split("|")[0]}
         </Center>
       )}
-    </GridItem>
+    </Box>
   );
 }

@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from "react";
 import {
   LocalParticipant,
   ParticipantEvent,
@@ -5,8 +6,6 @@ import {
   Track,
   TrackSource,
 } from "@mux/spaces-web";
-import { useCallback, useEffect, useState } from "react";
-import { useSpace } from "./useSpace";
 
 export interface ParticipantState {
   isMuted: boolean;
@@ -18,7 +17,6 @@ export interface ParticipantState {
 export function useParticipant(
   participant: LocalParticipant | RemoteParticipant
 ): ParticipantState {
-  const space = useSpace();
   const [isMuted, setMuted] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);

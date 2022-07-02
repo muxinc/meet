@@ -1,5 +1,6 @@
+import React, { useEffect, useMemo, useState } from "react";
 import Head from "next/head";
-import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import {
   Button,
   Box,
@@ -13,85 +14,68 @@ import {
   Flex,
   Center,
 } from "@chakra-ui/react";
-import { useRouter } from "next/router";
+import { useQuery } from "react-query";
 
 import Header from "components/Header";
 import SpaceMan from "components/SpaceMan";
-import { useLocalStorage } from "hooks/useLocalStorage";
+import UserContext from "context/user";
 
 const Home = () => {
   const router = useRouter();
+  const user = React.useContext(UserContext);
+  const [loading, setLoading] = useState(true);
+  const [spaceId, setSpaceId] = useState("");
+  const [participantName, setParticipantName] = useState("");
+  const [joining, setJoining] = useState(false);
 
-  const [spaceId, setSpaceId] = useLocalStorage("spaceId", "");
-  const [participantId, setParticipantId] = useLocalStorage(
-    "participantId",
-    ""
+  useEffect(() => {
+    setSpaceId(user.spaceId);
+    setParticipantName(user.participantName);
+    setLoading(false);
+  }, [user.spaceId, user.participantName]);
+
+  const { data: spaces } = useQuery(["Spaces"], () =>
+    fetch(`/api/spaces`).then((res) => res.json())
   );
-  const [spaces, setSpaces] = useState<
-    { id: string; passthrough?: string }[] | null
-  >(null);
-  const [errors, setErrors] = useState({ participantId: false });
-  const spaceIdValid = useCallback(() => {
+
+  const invalidSpaceId = useMemo(() => {
     let idValid = spaceId && spaceId !== "";
-    let idCurrent = spaces?.some((e) => e.id === spaceId);
-    return idValid && idCurrent;
+    let idCurrent = spaces?.some(
+      (space: { id: string; passthrough: string }) => space.id === spaceId
+    );
+    return !idValid && !idCurrent;
   }, [spaces, spaceId]);
-  const participantInvalid = useCallback(
-    () => !participantId || participantId.length < 2,
-    [participantId]
+
+  const invalidParticipantName = useMemo(
+    () => !participantName,
+    [participantName]
   );
-  let [joinDisabled, setJoinDisabled] = useState(true);
 
-  // GET request to get the spaces and create options
-  useEffect(() => {
-    const fetchSpaces = async () => {
-      const response = await fetch(`/api/spaces`, {
-        headers: {
-          "Cache-Control": "no-cache",
-        },
-        method: "GET",
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const _spaces = await response.json();
-
-      setSpaces(_spaces);
-    };
-    fetchSpaces();
-  }, [setSpaces]);
-
-  // manage join state
-  useEffect(() => {
-    setJoinDisabled(participantInvalid() || !spaceIdValid());
-  }, [participantInvalid, spaceIdValid]);
-
-  // manage spaces default
-  useEffect(() => {
-    if (!spaceIdValid() && spaces) {
-      setSpaceId(spaces[0]?.id);
-    }
-  }, [spaces, setSpaceId, spaceIdValid]);
+  const disableJoin = useMemo(
+    () => invalidParticipantName || invalidSpaceId,
+    [invalidParticipantName, invalidSpaceId]
+  );
 
   const handleSpaceIdChange = (event: { target: { value: string } }) => {
-    const _spaceId = event.target.value;
-    setSpaceId(_spaceId);
+    setSpaceId(event.target.value);
   };
 
-  const handleParticipantIdChange = (event: { target: { value: string } }) => {
-    const _participantId = event.target.value;
-    setParticipantId(_participantId);
-    setErrors({ participantId: participantInvalid() });
+  const handleParticipantNameChange = (event: {
+    target: { value: string };
+  }) => {
+    setParticipantName(event.target.value);
   };
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setJoining(true);
+
+    user.setSpaceId!(spaceId);
+    user.setParticipantName!(participantName);
+    user.setInteractionRequired(false);
 
     router.push({
       pathname: `/space/${spaceId}`,
-      query: { participantId: participantId },
     });
   }
 
@@ -99,7 +83,7 @@ const Home = () => {
     <>
       <Head>
         <title>Mux Meet</title>
-        <meta name="description" content="A meeting app built on Mux Spaces" />
+        <meta name="description" content="Real-time meetings powered by Mux" />
         <link rel="icon" href="/favicon.png" />
       </Head>
 
@@ -118,14 +102,17 @@ const Home = () => {
               <Stack spacing="4">
                 <Heading>Join a Space</Heading>
 
-                <FormControl isInvalid={errors.participantId}>
+                <FormControl isInvalid={!loading && invalidParticipantName}>
                   <FormLabel>Your Name</FormLabel>
                   <Input
-                    id="participant_id"
-                    value={participantId}
-                    onChange={handleParticipantIdChange}
+                    maxLength={40}
+                    id="participant_name"
+                    value={participantName}
+                    onChange={handleParticipantNameChange}
                   />
-                  <FormHelperText>This cannot be empty.</FormHelperText>
+                  <FormHelperText hidden={loading || !invalidParticipantName}>
+                    This cannot be empty.
+                  </FormHelperText>
                 </FormControl>
 
                 <FormControl>
@@ -148,7 +135,12 @@ const Home = () => {
                   </Select>
                 </FormControl>
 
-                <Button type="submit" width="full" isDisabled={joinDisabled}>
+                <Button
+                  type="submit"
+                  width="full"
+                  isDisabled={disableJoin}
+                  isLoading={joining}
+                >
                   Join
                 </Button>
               </Stack>

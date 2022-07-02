@@ -8,7 +8,13 @@ interface Props {
 
 export default function SpaceMan({ bottom }: Props): JSX.Element {
   return (
-    <Box position="absolute" bottom={bottom} right="10px" zIndex={1}>
+    <Box
+      display={{ base: "none", sm: "flex" }}
+      position="absolute"
+      bottom={bottom}
+      right="10px"
+      zIndex={1}
+    >
       <Image alt="logo" width="175px" height="200px" src="/mux-in-space.png" />
     </Box>
   );

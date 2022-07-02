@@ -1,13 +1,21 @@
 import React from "react";
-import { Box, Flex, Text, useToast } from "@chakra-ui/react";
+import { Button, Flex, Text, useToast } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 
 import { useSpace } from "hooks/useSpace";
-import LeaveIcon from "components/icons/leave";
+import useWindowDimensions from "hooks/useWindowDimension";
+
+import LeaveIcon from "components/icons/LeaveIcon";
+
 import { copyLinkToastConfig, ToastIds } from "shared/toastConfigs";
 
-export default function ControlsRight(): JSX.Element {
-  const space = useSpace();
+interface Props {
+  onLeave: () => void;
+}
+
+export default function ControlsRight({ onLeave }: Props): JSX.Element {
+  const { width } = useWindowDimensions();
+  const { space } = useSpace();
   const router = useRouter();
   const toast = useToast();
 
@@ -20,13 +28,18 @@ export default function ControlsRight(): JSX.Element {
     }
   };
 
+  const hideCopyInviteLink = (width && width < 930) || false;
+
   return (
-    <Flex alignItems="center" flexDirection="row-reverse" width="290px">
-      <Box
-        alignItems="center"
-        aria-label="Leave room"
-        as="button"
-        background="linear-gradient(90deg, #fb3c4e 0%, #fb2491 100%)"
+    <Flex
+      alignItems="center"
+      direction="row-reverse"
+      width="290px"
+      height="46px"
+    >
+      <Button
+        height="100%"
+        background="gradient"
         border="1px solid #666666"
         borderRadius="3px"
         color="white"
@@ -34,9 +47,9 @@ export default function ControlsRight(): JSX.Element {
         fill="white"
         flexDirection="row"
         marginLeft="10px"
-        mix-blend-mode="normal"
         padding="10px 20px"
         onClick={() => {
+          onLeave();
           space?.leave();
           router.push("/");
         }}
@@ -49,11 +62,11 @@ export default function ControlsRight(): JSX.Element {
       >
         <LeaveIcon />
         <Text paddingLeft="10px">Leave</Text>
-      </Box>
-      <Box
-        aria-label="Copy invite link"
-        as="button"
-        backgroundColor="none"
+      </Button>
+      <Button
+        height="100%"
+        hidden={hideCopyInviteLink}
+        variant="ghost"
         border="1px solid #666666"
         borderRadius="3px"
         color="#CCCCCC"
@@ -65,7 +78,7 @@ export default function ControlsRight(): JSX.Element {
         }}
       >
         Copy invite link
-      </Box>
+      </Button>
     </Flex>
   );
 }

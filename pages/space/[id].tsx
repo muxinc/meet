@@ -1,61 +1,75 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import { useMutation } from "react-query";
 import type { NextPage } from "next";
 import Head from "next/head";
-
-import { SpaceProvider } from "hooks/SpaceProvider";
-import Stage from "components/Stage";
 import { useRouter } from "next/router";
 
-const SpacePage: NextPage = () => {
+import { useLocalStorage } from "hooks/useLocalStorage";
+import { SpaceProvider } from "hooks/SpaceProvider";
+import { createToken } from "api/token";
+
+import Stage from "components/Stage";
+import UserInteractionPrompt from "components/UserInteractionPrompt";
+import UserContext from "context/user";
+
+interface Props {
+  spaceBackendURL: string;
+}
+
+const SpacePage: NextPage<Props> = ({ spaceBackendURL }: Props) => {
   const router = useRouter();
   const { isReady: isRouterReady } = router;
-  const { id, participantId } = router.query;
-  const [spaceJWT, setSpaceJWT] = useState("");
+  const { id } = router.query;
+  const user = React.useContext(UserContext);
 
-  // GET request to get the JWT
+  const [persistedAudioDeviceId] = useLocalStorage("audioDeviceId", "");
+  const [persistedVideoDeviceId] = useLocalStorage("videoDeviceId", "");
+
+  const mutation = useMutation(createToken);
+
   useEffect(() => {
     if (!isRouterReady) return;
-    // wait for the useRouter hook to asynchronously get the space id and participant id
     if (!id) {
       console.warn("No space selected");
       return;
     }
-    if (!participantId) {
-      console.warn("No participant id specified");
+    if (!user.participantName) {
+      user.setPromptForName!(true);
+      user.setInteractionRequired(false);
       return;
     }
+    if (!user.interactionRequired) {
+      mutation.mutate({
+        spaceId: Array.isArray(id) ? id[0] : id,
+        participantId: user.participantId,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isRouterReady,
+    id,
+    user.participantId,
+    user.participantName,
+    user.interactionRequired,
+    user.promptForName,
+    user.setPromptForName,
+  ]);
 
-    const fetchJWT = async () => {
-      const response = await fetch(
-        `/api/token/${id}?participantId=${participantId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const parsedResponse = await response.json();
-      setSpaceJWT(parsedResponse?.spaceJWT);
-    };
-
-    fetchJWT();
-  }, [isRouterReady, id, participantId]);
   return (
     <>
       <Head>
         <title>Mux Meet Space</title>
-        <meta name="description" content="A meeting app built on Mux Spaces" />
+        <meta name="description" content="This is your space room" />
         <link rel="icon" href="/favicon.png" />
       </Head>
 
-      <SpaceProvider jwt={spaceJWT}>
-        <Stage />
+      <SpaceProvider
+        jwt={mutation.data?.spaceJWT}
+        defaultAudioDeviceId={persistedAudioDeviceId}
+        defaultVideoDeviceId={persistedVideoDeviceId}
+      >
+        {/* required to handle auto play https://developer.chrome.com/blog/autoplay/ */}
+        {user.interactionRequired ? <UserInteractionPrompt /> : <Stage />}
       </SpaceProvider>
     </>
   );

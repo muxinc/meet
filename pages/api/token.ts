@@ -27,13 +27,13 @@ export default function handler(
   res: NextApiResponse<ResponseData>
 ) {
   const {
-    query: { id, participantId },
+    body: { spaceId, participantId },
     method,
   } = req;
-  if (method === "GET") {
+  if (method === "POST") {
     res
       .status(StatusCodes.OK)
-      .json(signJWT(id as string, participantId as string));
+      .json(signJWT(spaceId as string, participantId as string));
   } else {
     res.status(StatusCodes.METHOD_NOT_ALLOWED);
   }
