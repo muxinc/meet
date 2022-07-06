@@ -1,5 +1,4 @@
-import { useRouter } from "next/router";
-import { useEffect, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -14,7 +13,8 @@ import {
   FormHelperText,
   Input,
 } from "@chakra-ui/react";
-import { useLocalStorage } from "hooks/useLocalStorage";
+
+import UserContext from "context/user";
 
 type Props = Pick<ReturnType<typeof useDisclosure>, "isOpen" | "onClose">;
 
@@ -22,87 +22,48 @@ export default function RenameParticipantModal({
   isOpen,
   onClose,
 }: Props): JSX.Element {
-  const {
-    isReady,
-    pathname,
-    push,
-    query: { id, participantId: participantIdQueryParam },
-  } = useRouter();
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const [participantId, setParticipantId] = useLocalStorage(
-    "participantId",
-    ""
+  const user = React.useContext(UserContext);
+  const [participantName, setParticipantName] = useState(user.participantName);
+
+  const invalidParticipantName = useMemo(
+    () => !participantName,
+    [participantName]
   );
-  const [errors, setErrors] = useState<{
-    participantId: boolean;
-  } | null>(null);
-
-  useEffect(() => {
-    if (
-      isReady &&
-      typeof participantIdQueryParam !== "undefined" &&
-      !Array.isArray(participantIdQueryParam)
-    ) {
-      setParticipantId(participantIdQueryParam);
-    } else if (isReady && typeof participantIdQueryParam === "undefined") {
-      const storedParticipantId = participantId;
-      if (
-        storedParticipantId !== null &&
-        storedParticipantId !== participantId
-      ) {
-        setParticipantId(storedParticipantId);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isReady, participantIdQueryParam]);
-
-  function handleRename() {
-    const participantIdIsInvalid = participantId.length < 2;
-    if (participantIdIsInvalid) {
-      setErrors({
-        participantId: participantIdIsInvalid,
-      });
-      return;
-    }
-    setParticipantId(participantId);
-
-    if (participantId !== participantIdQueryParam) {
-      push({
-        pathname: pathname,
-        query: { id, participantId },
-      });
-    }
-  }
 
   const handleParticipantIdChange = (event: { target: { value: string } }) => {
-    setErrors(null);
-    setParticipantId(event.target.value);
+    setParticipantName(event.target.value);
   };
 
   const submit = () => {
-    handleRename();
+    if (invalidParticipantName) return;
+
+    user.setPromptForName!(false);
+    user.setParticipantName!(participantName);
     onClose();
   };
 
   return (
     <Modal
       isCentered
-      isOpen={
-        isOpen || (isReady && typeof participantIdQueryParam === "undefined")
-      }
-      onClose={onClose}
+      isOpen={isOpen || user.promptForName}
+      onClose={() => {
+        setParticipantName(user.participantName);
+        onClose();
+      }}
       initialFocusRef={nameInputRef}
     >
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>{`What's your name?`}</ModalHeader>
+        <ModalHeader>{"What's your name?"}</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          <FormControl isInvalid={errors?.participantId}>
+          <FormControl isInvalid={invalidParticipantName}>
             <Input
+              maxLength={40}
               ref={nameInputRef}
               id="participant_id"
-              value={participantId}
+              value={participantName}
               onChange={handleParticipantIdChange}
               onKeyPress={(e) => {
                 if (e.key === "Enter") {
@@ -110,7 +71,7 @@ export default function RenameParticipantModal({
                 }
               }}
             />
-            <FormHelperText hidden={!errors?.participantId}>
+            <FormHelperText hidden={!invalidParticipantName}>
               This cannot be empty.
             </FormHelperText>
           </FormControl>
@@ -121,7 +82,7 @@ export default function RenameParticipantModal({
             type="submit"
             colorScheme="blue"
             onClick={submit}
-            isDisabled={errors?.participantId}
+            isDisabled={invalidParticipantName}
           >
             Enter
           </Button>

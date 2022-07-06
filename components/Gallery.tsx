@@ -1,39 +1,41 @@
 import React from "react";
-import { Box, Grid } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 
-import LocalView from "./LocalView";
-import Participant from "./Participant";
+import useWindowDimensions from "hooks/useWindowDimension";
 import { useParticipants } from "hooks/useParticipants";
+import { useLocalParticipant } from "hooks/useLocalParticipant";
 
-const calculateRows = (n: number) => Math.round(Math.sqrt(n));
-const calculateCols = (n: number) => Math.ceil(Math.sqrt(n));
+import Participant from "./Participant";
+import GalleryLayout from "./GalleryLayout";
+import ParticipantAudio from "./ParticipantAudio";
 
 export default function Gallery(): JSX.Element {
+  const { width = 0, height = 0 } = useWindowDimensions();
+  const localParticipant = useLocalParticipant();
   const participants = useParticipants();
-  const numParticipants = 1 + (participants?.length || 0);
-  const numCols = calculateCols(numParticipants);
-  const numRows = calculateRows(numParticipants);
+
+  const galleryWidth = width - 40;
+  const galleryHeight = height - 120;
 
   return (
     <Box
       width="100%"
       height="100%"
-      marginInline="auto"
-      display="flex"
-      justifyContent="center"
-      paddingBottom="80px" /* Height of control bar */
-      alignItems="center"
+      maxHeight="100%"
+      padding="20px"
+      marginBottom="80px"
       zIndex={100}
     >
-      <Grid
-        width="100%"
-        maxHeight="100%"
-        templateColumns={`repeat(${numCols}, 1fr)`}
-        templateRows={`repeat(${numRows}, 1fr)`}
-        gridGap="2"
-        padding="20px"
-      >
-        <LocalView />
+      {participants?.map((participant) => (
+        <ParticipantAudio
+          key={participant.connectionId}
+          participant={participant}
+        />
+      ))}
+      <GalleryLayout width={galleryWidth} height={galleryHeight}>
+        {localParticipant && (
+          <Participant local participant={localParticipant} />
+        )}
         {participants?.map((participant) => {
           return (
             <Participant
@@ -43,7 +45,7 @@ export default function Gallery(): JSX.Element {
             />
           );
         })}
-      </Grid>
+      </GalleryLayout>
     </Box>
   );
 }

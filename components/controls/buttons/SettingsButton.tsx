@@ -1,18 +1,32 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Box,
-  Fade,
-  Flex,
-  Image,
+  IconButton,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
   useDisclosure,
-  useOutsideClick,
+  useToast,
 } from "@chakra-ui/react";
+import { useRouter } from "next/router";
 
-import ControlsButton from "../ControlsButton";
+import { copyLinkToastConfig, ToastIds } from "shared/toastConfigs";
+
+import { useSpace } from "hooks/useSpace";
+import { useScreenShare } from "hooks/useScreenShare";
+import useWindowDimensions from "hooks/useWindowDimension";
+
+import SettingsIcon from "components/icons/SettingsIcon";
 import RenameParticipantModal from "components/modals/RenameParticipantModal";
 
 export default function SettingsButton(): JSX.Element {
-  const [isOpen, setIsOpen] = useState(false);
+  const { width } = useWindowDimensions();
+  const { space } = useSpace();
+  const { isLocalScreenShare } = useScreenShare();
+
+  const router = useRouter();
+  const toast = useToast();
 
   const {
     isOpen: isRenameModalOpen,
@@ -20,29 +34,17 @@ export default function SettingsButton(): JSX.Element {
     onClose: onRenameModalClose,
   } = useDisclosure();
 
-  let settingsIcon = (
-    <Image
-      className="iconExpand"
-      alt="settings"
-      width="25px"
-      height="25px"
-      src="/elipsis.svg"
-    />
-  );
+  const showCopyInviteLink = (width && width < 930) || false;
+  const showLeaveOption = (width && width < 480) || false;
 
-  let ref = React.useRef<any>();
-  useOutsideClick({
-    ref: ref,
-    enabled: isOpen,
-    handler: (e) => {
-      let icon = e.target as HTMLImageElement;
-      // If the icon expand is toggled we need to ignore it so it doesn't reopen
-      if (icon && icon.classList && icon.classList.contains("iconExpand"))
-        return;
-
-      setIsOpen(!isOpen);
-    },
-  });
+  const shareLink = () => {
+    navigator.clipboard.writeText(
+      `${window.location.protocol}//${window.location.host}/space/${router.query["id"]}`
+    );
+    if (!toast.isActive(ToastIds.COPY_LINK_TOAST_ID)) {
+      toast(copyLinkToastConfig);
+    }
+  };
 
   return (
     <>
@@ -50,41 +52,47 @@ export default function SettingsButton(): JSX.Element {
         isOpen={isRenameModalOpen}
         onClose={onRenameModalClose}
       />
-      <Fade in={isOpen}>
-        <Flex
-          bg="#383838"
-          border="1px solid #323232"
-          bottom="90px"
-          color="#CCCCCC"
-          display={isOpen ? "flex" : "none"}
-          flexDirection="column"
-          fontSize="14px"
-          padding="5px 10px"
-          position="absolute"
-          ref={ref}
-          width="200px"
-        >
-          <Box
-            as="button"
-            onClick={onRenameModalOpen}
-            paddingY="10px"
-            textAlign="left"
+      <Box>
+        <Menu placement="top">
+          <MenuButton
+            left="-10px"
+            width="60px"
+            height="60px"
+            as={IconButton}
+            aria-label="Options"
+            icon={<SettingsIcon />}
+            variant="link"
+            _hover={{
+              background:
+                "radial-gradient(50% 50% at 50% 50%, rgba(251, 36, 145, 0.6) 0%, rgba(251, 36, 145, 0) 100%);",
+            }}
+          />
+          <MenuList
+            background="#383838"
+            border="1px solid #323232"
+            color="#CCCCCC"
+            padding="5px 10px"
+            width="200px"
           >
-            Change Name
-          </Box>
-        </Flex>
-      </Fade>
-      <ControlsButton
-        className="iconExpand"
-        icon={settingsIcon}
-        aria-label={"settings"}
-        onToggle={() => {
-          setIsOpen(!isOpen);
-        }}
-        onToggleExpand={() => {
-          setIsOpen(!isOpen);
-        }}
-      />
+            {!isLocalScreenShare && (
+              <MenuItem onClick={onRenameModalOpen}>Change Name</MenuItem>
+            )}
+            {showCopyInviteLink && (
+              <MenuItem onClick={shareLink}>Copy Invite Link</MenuItem>
+            )}
+            {showLeaveOption && (
+              <MenuItem
+                onClick={() => {
+                  space?.leave();
+                  router.push("/");
+                }}
+              >
+                Leave
+              </MenuItem>
+            )}
+          </MenuList>
+        </Menu>
+      </Box>
     </>
   );
 }

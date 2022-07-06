@@ -1,12 +1,10 @@
-import { Flex } from "@chakra-ui/react";
 import React, { useEffect, useRef } from "react";
-import { Track } from "@mux/spaces-web";
+import { Flex } from "@chakra-ui/react";
 
-interface Props {
-  track: Track;
-}
+import { useScreenShare } from "hooks/useScreenShare";
 
-export default function ScreenShareRenderer({ track }: Props): JSX.Element {
+export default function ScreenShareRenderer(): JSX.Element {
+  const { screenShareTrack } = useScreenShare();
   const videoEl = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
@@ -14,14 +12,11 @@ export default function ScreenShareRenderer({ track }: Props): JSX.Element {
     if (!el) return;
 
     el.muted = true;
-    track.attach(el);
+    screenShareTrack?.attach(el);
     return () => {
-      track.detach(el);
+      screenShareTrack?.detach(el);
     };
-
-    // The MediaStreamTrack prop needs to be observed rather than the Mux Track
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [track.track]);
+  }, [screenShareTrack]);
 
   return (
     <Flex

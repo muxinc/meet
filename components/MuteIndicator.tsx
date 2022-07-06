@@ -1,36 +1,63 @@
 import React from "react";
-import { Box, Flex, Icon, Text } from "@chakra-ui/react";
+import { Box, Flex, Icon } from "@chakra-ui/react";
 import { IoMicOffOutline } from "react-icons/io5";
 
 interface Props {
   isMuted: boolean;
+  parentHeight: number;
 }
 
-export default function MuteIndicator({ isMuted }: Props): JSX.Element {
+export default function MuteIndicator({
+  isMuted,
+  parentHeight,
+}: Props): JSX.Element {
+  let left = "2px";
+  let bottom = "15%";
+  let marginLeft = "3";
+  let iconWidth = "5";
+  let iconHeight = "5";
+  let borderRadius = "10px";
+  let paddingX = "2";
+  let paddingY = "1";
+  if (parentHeight <= 250) {
+    left = "0";
+    bottom = "5%";
+    marginLeft = "1";
+  }
+  if (parentHeight <= 200) {
+    paddingX = "1";
+    borderRadius = "0 10px 0 0";
+    bottom = "0";
+    marginLeft = "0";
+    iconWidth = "12px";
+    iconHeight = "12px";
+  }
+  if (parentHeight <= 90) {
+    paddingX = "0";
+    paddingY = "1.5px";
+    borderRadius = "0";
+  }
+
   return (
     <Box
       _groupHover={{
         opacity: 1,
-        backgroundColor: "rgba(0,0,0,0)",
+        backgroundColor: "transparent",
       }}
       background="rgba(68, 68, 68, 0.75)"
-      borderRadius="10px"
-      bottom="10px"
+      borderRadius={borderRadius}
       color="white"
-      left="0"
-      marginX="2"
+      marginLeft={marginLeft}
       marginY="0"
-      position="absolute"
-      textAlign="center"
-      width="88px"
+      py={paddingY}
       zIndex={10}
+      position="absolute"
+      left={left}
+      bottom={bottom}
     >
       {isMuted && (
-        <Flex alignItems="center" color="#FFFFFF" px={2} py={1}>
-          <Icon w={5} h={5} as={IoMicOffOutline} mr={0.5} />
-          <Text fontSize={14} fontWeight="bold">
-            Muted
-          </Text>
+        <Flex alignItems="center" color="#FFFFFF" px={paddingX}>
+          <Icon w={iconWidth} h={iconHeight} as={IoMicOffOutline} />
         </Flex>
       )}
     </Box>

@@ -55,4 +55,31 @@ export const theme = extendTheme({
       100: "#DF491E",
     },
   },
+  semanticTokens: {
+    colors: {
+      gradient: "linear-gradient(90deg, #fb3c4e 0%, #fb2491 100%)",
+    },
+  },
+  components: {
+    Button: {
+      baseStyle: {
+        _focus: {
+          boxShadow: "none",
+        },
+      },
+    },
+    Menu: {
+      parts: ["item"],
+      baseStyle: {
+        item: {
+          _focus: {
+            background: "transparent",
+          },
+          _active: {
+            background: "rgba(0,0,0,0.5)",
+          },
+        },
+      },
+    },
+  },
 });

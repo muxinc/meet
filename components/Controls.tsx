@@ -6,25 +6,17 @@ import ControlsLeft from "./controls/ControlsLeft";
 import ControlsCenter from "./controls/ControlsCenter";
 
 interface Props {
-  hasPermissions: boolean;
-  isLocalScreenShare: boolean;
-  screenIsShared: boolean;
-  toggleScreenShare: () => void;
+  onLeave: () => void;
 }
 
-export default function Controls({
-  hasPermissions,
-  isLocalScreenShare,
-  screenIsShared,
-  toggleScreenShare,
-}: Props): JSX.Element {
+export default function Controls({ onLeave }: Props): JSX.Element {
   return (
     <Flex
       alignItems="center"
       backgroundColor="#333"
       bottom="0px"
       flexDirection="row"
-      height="80px"
+      height={{ base: "60px", sm: "80px" }}
       justifyContent="space-between"
       left="0px"
       padding="10px 40px"
@@ -33,13 +25,8 @@ export default function Controls({
       zIndex={1000}
     >
       <ControlsLeft />
-      <ControlsCenter
-        hasPermissions={hasPermissions}
-        isLocalScreenShare={isLocalScreenShare}
-        screenIsShared={screenIsShared}
-        toggleScreenShare={toggleScreenShare}
-      />
-      <ControlsRight />
+      <ControlsCenter />
+      <ControlsRight onLeave={onLeave} />
     </Flex>
   );
 }

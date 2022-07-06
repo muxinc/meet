@@ -1,164 +1,43 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { Box, Fade, Flex, Image, useOutsideClick } from "@chakra-ui/react";
+import React, { useEffect } from "react";
 import {
-  CreateLocalMediaOptions,
-  LocalTrack,
-  LocalTrackOptions,
-  ParticipantEvent,
-  TrackKind,
-  TrackSource,
-} from "@mux/spaces-web";
-import { useLocalParticipant } from "hooks/useLocalParticipant";
+  Box,
+  ButtonGroup,
+  Flex,
+  IconButton,
+  Image,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+  Tooltip,
+  Text,
+} from "@chakra-ui/react";
+import { useHotkeys } from "react-hotkeys-hook";
 import { AiOutlineCheck } from "react-icons/ai";
-import ControlsButton from "../ControlsButton";
 
-interface Props {
-  hasPermissions: boolean;
-}
+import { useDevices } from "hooks/useDevices";
+import { useLocalStorage } from "hooks/useLocalStorage";
 
-export default function VideoButton({ hasPermissions }: Props): JSX.Element {
-  const localParticipant = useLocalParticipant();
-  const [isOpen, setIsOpen] = useState(false);
+import ChevronIcon from "components/icons/ChevronIcon";
 
-  const [cameraTrack, setCameraTrack] = useState(
-    localParticipant
-      ?.getVideoTracks()
-      .find((track) => track.source === TrackSource.Camera)
-  );
-  const [cameraMuted, setCameraMuted] = useState(cameraTrack?.isMuted());
+interface Props {}
 
-  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [videoDeviceId, setVideoDeviceId] = useState("");
-
-  useEffect(() => {
-    async function loadDevices() {
-      const availableDevices = await navigator.mediaDevices.enumerateDevices();
-      const storedVideoDeviceId = localStorage.getItem("videoDeviceId");
-      if (storedVideoDeviceId) {
-        const availableVideoDeviceId = availableDevices.find(
-          (availableDevice) => {
-            return (
-              availableDevice.kind === "videoinput" &&
-              availableDevice.deviceId === storedVideoDeviceId
-            );
-          }
-        );
-        if (availableVideoDeviceId) {
-          setVideoDeviceId(availableVideoDeviceId.deviceId);
-        }
-      }
-
-      setDevices(availableDevices);
-    }
-    loadDevices();
-  }, [hasPermissions]);
-
-  const handleDeviceChange = useCallback(
-    (trackKind: TrackKind, newDeviceId: string) => {
-      let options: CreateLocalMediaOptions = {};
-      if (newDeviceId !== "") {
-        const option: LocalTrackOptions = {
-          constraints: {
-            deviceId: { exact: newDeviceId },
-          },
-        };
-        switch (trackKind) {
-          case TrackKind.Video:
-            options["video"] = option;
-            break;
-        }
-      }
-
-      localParticipant?.getUserMedia(options).then((tracks) => {
-        const updatedTracks = localParticipant.updateTracks(tracks);
-        updatedTracks.forEach((track) => {
-          switch (track.kind) {
-            case TrackKind.Video:
-              setVideoDeviceId(newDeviceId);
-              localStorage.setItem("videoDeviceId", newDeviceId);
-              break;
-          }
-        });
-      });
-    },
-    [localParticipant]
-  );
+export default function VideoButton({}: Props): JSX.Element {
+  const {
+    videoDevices,
+    selectedVideoDeviceId,
+    videoOff,
+    videoTrack,
+    toggleVideo,
+    changeVideoDevice,
+  } = useDevices();
+  const [_, setPersistedVideoDeviceId] = useLocalStorage("videoDeviceId", "");
 
   useEffect(() => {
-    setCameraTrack(
-      localParticipant
-        ?.getVideoTracks()
-        .find((track) => track.source === TrackSource.Camera)
-    );
+    setPersistedVideoDeviceId(selectedVideoDeviceId);
+  }, [selectedVideoDeviceId, setPersistedVideoDeviceId]);
 
-    // Keep mic/camera state up-to-date when local tracks are published
-    const handleTrackPublished = (track: LocalTrack) => {
-      switch (track.source) {
-        case TrackSource.Camera:
-          setCameraTrack(track);
-          break;
-      }
-    };
-
-    localParticipant?.on(ParticipantEvent.TrackPublished, handleTrackPublished);
-
-    return () => {
-      localParticipant?.off(
-        ParticipantEvent.TrackPublished,
-        handleTrackPublished
-      );
-    };
-  }, [localParticipant]);
-
-  const toggleVideo = useCallback(
-    async (toggleOn) => {
-      if (!toggleOn) {
-        if (cameraTrack) {
-          localStorage.setItem("videoDeviceId", cameraTrack.deviceId || "");
-          cameraTrack.mute();
-          cameraTrack.track.stop();
-          setCameraTrack(undefined);
-          setCameraMuted(true);
-        }
-      } else {
-        // If a deviceId was stored, try to get local tracks for that device
-        // Otherwise, fallback to browser defaults
-        let tracks: LocalTrack[] | undefined = undefined;
-        try {
-          const storedVideoDeviceId = localStorage.getItem("videoDeviceId");
-          if (storedVideoDeviceId) {
-            tracks = await localParticipant?.getUserMedia({
-              video: { constraints: { deviceId: storedVideoDeviceId } },
-            });
-          } else {
-            tracks = await localParticipant?.getUserMedia({ video: {} });
-          }
-        } catch (e) {
-          // May occur if previously saved device is no longer available
-          if (e instanceof OverconstrainedError) {
-            tracks = await localParticipant?.getUserMedia({ video: {} });
-          }
-        }
-
-        if (tracks) {
-          const updatedTracks = localParticipant?.updateTracks(tracks);
-          if (updatedTracks) {
-            const updatedCamera = updatedTracks.find((track) => {
-              return track.source === TrackSource.Camera;
-            });
-            if (updatedCamera) {
-              setCameraTrack(updatedCamera);
-              setCameraMuted(false);
-              updatedCamera.unMute();
-            }
-          }
-        }
-      }
-    },
-    [cameraTrack, localParticipant]
-  );
-
-  let cameraUnmute = (
+  let cameraUnmuteIcon = (
     <Image
       alt="unmute camera"
       width="25px"
@@ -167,92 +46,81 @@ export default function VideoButton({ hasPermissions }: Props): JSX.Element {
     />
   );
 
-  let cameraMute = (
+  let cameraMuteIcon = (
     <Image alt="mute camera" width="25px" height="25px" src="/cameraOn.svg" />
   );
 
-  let ref = React.useRef<any>();
-  const ariaLabel = cameraMuted ? "Unhide" : "Hide";
-  useOutsideClick({
-    ref: ref,
-    enabled: isOpen,
-    handler: (e) => {
-      let icon = e.target as HTMLImageElement;
-      // If the icon expand is toggled we need to ignore it so it doesn't reopen
-      if (
-        icon &&
-        icon.classList &&
-        icon.classList.contains(`iconExpand-${ariaLabel}`)
-      )
-        return;
-
-      setIsOpen(!isOpen);
+  const hotkeyText = "⌘ + e"; // adding this here to make it easy to change later. appears in tooltip on button.
+  useHotkeys(
+    "cmd+e,ctrl+e",
+    (e) => {
+      e.preventDefault();
+      toggleVideo();
     },
-  });
+    [videoTrack]
+  );
+
+  const ariaLabel = videoOff ? "Unhide" : "Hide";
 
   return (
-    <>
-      <Fade in={isOpen}>
-        <Flex
-          bg="#383838"
+    <ButtonGroup size="sm" isAttached variant="outline">
+      <Tooltip
+        label={
+          videoOff
+            ? `Enable Video (${hotkeyText})`
+            : `Disable Video (${hotkeyText})`
+        }
+      >
+        <IconButton
+          width="60px"
+          height="60px"
+          variant="link"
+          aria-label={ariaLabel}
+          icon={videoOff ? cameraUnmuteIcon : cameraMuteIcon}
+          onClick={toggleVideo}
+          _hover={{
+            background:
+              "radial-gradient(50% 50% at 50% 50%, rgba(251, 36, 145, 0.6) 0%, rgba(251, 36, 145, 0) 100%);",
+          }}
+        />
+      </Tooltip>
+      <Menu placement="top">
+        <MenuButton
+          as={IconButton}
+          aria-label="Options"
+          icon={<ChevronIcon />}
+          variant="link"
+          marginLeft="-16px"
+          zIndex={100}
+        />
+        <MenuList
+          background="#383838"
           border="1px solid #323232"
-          bottom="90px"
           color="#CCCCCC"
-          display={isOpen ? "flex" : "none"}
-          flexDirection="column"
-          fontSize="14px"
           padding="5px 10px"
-          position="absolute"
-          ref={ref}
-          width="300px"
         >
-          <Box textAlign="left" paddingY="10px">
+          <Text userSelect="none" paddingX="12px" paddingY="6px">
             CAMERA
-          </Box>
-          {devices
-            .filter((d) => d.kind === "videoinput")
-            .map((device) => {
-              return (
-                <Box
-                  as="button"
-                  key={device.deviceId}
-                  onClick={() => {
-                    handleDeviceChange(TrackKind.Video, device.deviceId);
-                  }}
-                  textAlign="left"
-                  paddingY="10px"
-                >
-                  <Flex alignItems="center">
-                    {device.label}
-                    {videoDeviceId == device.deviceId && (
-                      <Box marginLeft="10px">
-                        <AiOutlineCheck />
-                      </Box>
-                    )}
-                  </Flex>
-                </Box>
-              );
-            })}
-        </Flex>
-      </Fade>
-      <ControlsButton
-        icon={cameraMuted ? cameraUnmute : cameraMute}
-        aria-label={ariaLabel}
-        toolTipLabel={cameraMuted ? "Enable Video" : "Disable Video"}
-        onToggle={() => {
-          if (typeof cameraTrack === "undefined" || cameraTrack.isMuted()) {
-            toggleVideo(true);
-            setCameraMuted(false);
-          } else {
-            toggleVideo(false);
-            setCameraMuted(true);
-          }
-        }}
-        expandable={true}
-        onToggleExpand={() => {
-          setIsOpen(!isOpen);
-        }}
-      />
-    </>
+          </Text>
+          {videoDevices.map((device) => {
+            return (
+              <MenuItem
+                key={device.deviceId}
+                onClick={() => changeVideoDevice(device.deviceId)}
+              >
+                <Flex alignItems="center">
+                  {device.label}
+                  {selectedVideoDeviceId === device.deviceId && (
+                    <Box marginLeft="10px">
+                      <AiOutlineCheck />
+                    </Box>
+                  )}
+                </Flex>
+              </MenuItem>
+            );
+          })}
+        </MenuList>
+      </Menu>
+    </ButtonGroup>
   );
 }

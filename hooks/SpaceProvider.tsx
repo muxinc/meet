@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { ReactNode, useEffect, useRef, useState } from "react";
 import {
   LocalParticipant,
   RemoteParticipant,
@@ -7,29 +7,45 @@ import {
 } from "@mux/spaces-web";
 
 import { MuxContext } from "./MuxContext";
+import { UserMediaProvider } from "./UserMediaProvider";
+import { DisplayMediaProvider } from "./DisplayMediaProvider";
 
 type Props = {
-  jwt: string;
+  jwt?: string;
+  children: ReactNode;
+  defaultAudioDeviceId?: string;
+  defaultVideoDeviceId?: string;
 };
 
-export const SpaceProvider: React.FC<Props> = ({ children, ...props }) => {
-  const { jwt } = props;
-
+export const SpaceProvider: React.FC<Props> = ({
+  children,
+  jwt,
+  defaultAudioDeviceId = "",
+  defaultVideoDeviceId = "",
+}) => {
   const spaceRef = useRef<Space | null>(null);
   const [participants, setParticipants] = useState<RemoteParticipant[]>([]);
   const [localParticipant, setLocalParticipant] =
     useState<LocalParticipant | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!jwt) {
       return;
     }
 
-    const space = new Space(jwt);
+    (window as any).MUX_SPACES_ENABLE_SIMULCAST = true;
+
+    let space: Space;
+    try {
+      space = new Space(jwt);
+    } catch (e: any) {
+      setJoinError(e.message);
+      return;
+    }
 
     const handleParticipantJoined = (newParticipant: RemoteParticipant) => {
       setParticipants((oldParticipantArray) => {
-        // Prevent duplicate participant object from being added
         const found = oldParticipantArray.find(
           (p) => p.connectionId === newParticipant.connectionId
         );
@@ -51,9 +67,14 @@ export const SpaceProvider: React.FC<Props> = ({ children, ...props }) => {
     space.on(SpaceEvent.ParticipantJoined, handleParticipantJoined);
     space.on(SpaceEvent.ParticipantLeft, handleParticipantLeft);
 
-    space.join().then((localParticipant: LocalParticipant) => {
-      setLocalParticipant(localParticipant);
-    });
+    space
+      .join()
+      .then((_localParticipant: LocalParticipant) => {
+        setLocalParticipant(_localParticipant);
+      })
+      .catch((error) => {
+        setJoinError(error.message);
+      });
 
     spaceRef.current = space;
 
@@ -64,13 +85,25 @@ export const SpaceProvider: React.FC<Props> = ({ children, ...props }) => {
       setParticipants([]);
       space.leave();
     };
-  }, [jwt]);
+  }, [jwt, setJoinError]);
 
   return (
     <MuxContext.Provider
-      value={{ space: spaceRef.current, participants, localParticipant }}
+      value={{
+        space: spaceRef.current,
+        participants,
+        localParticipant,
+        joinError,
+      }}
     >
-      {children}
+      <DisplayMediaProvider>
+        <UserMediaProvider
+          defaultAudioDeviceId={defaultAudioDeviceId}
+          defaultVideoDeviceId={defaultVideoDeviceId}
+        >
+          {children}
+        </UserMediaProvider>
+      </DisplayMediaProvider>
     </MuxContext.Provider>
   );
 };

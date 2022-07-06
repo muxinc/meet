@@ -1,22 +1,15 @@
-import { Image } from "@chakra-ui/react";
 import React from "react";
+import { IconButton, Image, Tooltip } from "@chakra-ui/react";
 
-import ControlsButton from "../ControlsButton";
+import { useScreenShare } from "hooks/useScreenShare";
 
-interface Props {
-  isLocalScreenShare: boolean;
-  screenIsShared: boolean;
-  toggleScreenShare: () => void;
-}
+export default function ScreenShareButton(): JSX.Element {
+  const { isLocalScreenShare, screenShareTrack, toggleScreenShare } =
+    useScreenShare();
 
-export default function ScreenShareButton({
-  isLocalScreenShare,
-  screenIsShared,
-  toggleScreenShare,
-}: Props): JSX.Element {
   let stopScreenShare = (
     <Image
-      alt="mute camera"
+      alt="screen share on"
       width="25px"
       height="25px"
       src="/screenShareOn.svg"
@@ -25,7 +18,7 @@ export default function ScreenShareButton({
 
   let startScreenShare = (
     <Image
-      alt="unmute camera"
+      alt="screen share off"
       width="25px"
       height="25px"
       src="/screenShareOff.svg"
@@ -33,19 +26,27 @@ export default function ScreenShareButton({
   );
 
   return (
-    <ControlsButton
-      icon={
-        screenIsShared && isLocalScreenShare
-          ? stopScreenShare
-          : startScreenShare
-      }
-      aria-label="Share Screen"
-      toolTipLabel={
-        screenIsShared && isLocalScreenShare
-          ? "Stop Screenshare"
+    <Tooltip
+      label={
+        screenShareTrack
+          ? isLocalScreenShare
+            ? "Stop Screenshare"
+            : "Screen being shared"
           : "Share Screen"
       }
-      onToggle={toggleScreenShare}
-    />
+    >
+      <IconButton
+        width="60px"
+        height="60px"
+        variant="link"
+        aria-label="Share Screen"
+        icon={screenShareTrack ? stopScreenShare : startScreenShare}
+        onClick={toggleScreenShare}
+        _hover={{
+          background:
+            "radial-gradient(50% 50% at 50% 50%, rgba(251, 36, 145, 0.6) 0%, rgba(251, 36, 145, 0) 100%);",
+        }}
+      />
+    </Tooltip>
   );
 }
