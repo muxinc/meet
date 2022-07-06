@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import {
@@ -28,23 +28,31 @@ const Home = () => {
   const [participantName, setParticipantName] = useState("");
   const [joining, setJoining] = useState(false);
 
-  useEffect(() => {
-    setSpaceId(user.spaceId);
-    setParticipantName(user.participantName);
-    setLoading(false);
-  }, [user.spaceId, user.participantName]);
-
   const { data: spaces } = useQuery(["Spaces"], () =>
     fetch(`/api/spaces`).then((res) => res.json())
   );
 
-  const invalidSpaceId = useMemo(() => {
-    let idValid = spaceId && spaceId !== "";
-    let idCurrent = spaces?.some(
-      (space: { id: string; passthrough: string }) => space.id === spaceId
-    );
-    return !idValid && !idCurrent;
-  }, [spaces, spaceId]);
+  const invalidSpaceId = useCallback(
+    (spaceIdToCheck: string) => {
+      let idValid = spaceIdToCheck && spaceIdToCheck !== "";
+      let idCurrent = spaces?.some(
+        (space: { id: string; passthrough: string }) =>
+          space.id === spaceIdToCheck
+      );
+      return !idValid || !idCurrent;
+    },
+    [spaces]
+  );
+
+  useEffect(() => {
+    if (!invalidSpaceId(user.spaceId)) {
+      setSpaceId(user.spaceId);
+    } else if (spaces && spaces.length > 0) {
+      setSpaceId(spaces[0].id);
+    }
+    setParticipantName(user.participantName);
+    setLoading(false);
+  }, [spaces, user.spaceId, user.participantName, invalidSpaceId]);
 
   const invalidParticipantName = useMemo(
     () => !participantName,
@@ -52,8 +60,8 @@ const Home = () => {
   );
 
   const disableJoin = useMemo(
-    () => invalidParticipantName || invalidSpaceId,
-    [invalidParticipantName, invalidSpaceId]
+    () => invalidParticipantName || invalidSpaceId(spaceId),
+    [spaceId, invalidParticipantName, invalidSpaceId]
   );
 
   const handleSpaceIdChange = (event: { target: { value: string } }) => {
@@ -83,7 +91,7 @@ const Home = () => {
     <>
       <Head>
         <title>Mux Meet</title>
-        <meta name="description" content="A meeting app built on Mux Spaces" />
+        <meta name="description" content="Real-time meetings powered by Mux" />
         <link rel="icon" href="/favicon.png" />
       </Head>
 

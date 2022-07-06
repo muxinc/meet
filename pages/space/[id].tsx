@@ -55,7 +55,7 @@ const SpacePage: NextPage = () => {
     <>
       <Head>
         <title>Mux Meet Space</title>
-        <meta name="description" content="A meeting app built on Mux Spaces" />
+        <meta name="description" content="Real-time meetings powered by Mux" />
         <link rel="icon" href="/favicon.png" />
       </Head>
 
