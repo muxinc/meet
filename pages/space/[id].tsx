@@ -6,7 +6,7 @@ import { useRouter } from "next/router";
 
 import { useLocalStorage } from "hooks/useLocalStorage";
 import { SpaceProvider } from "hooks/SpaceProvider";
-import { createToken } from "api/token";
+import { createToken } from "client/token";
 
 import Stage from "components/Stage";
 import UserInteractionPrompt from "components/UserInteractionPrompt";
