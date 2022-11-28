@@ -1,3 +1,9 @@
+# Mux Meet
+
+Mux Meet is a reference implementation of [Mux Real-Time Video](https://mux.com/real-time-video), in React, using the Next.js framework.
+
+![Four users in a Mux Meet call](/mux-meet.png)
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmuxinc%2Fmeet&env=MUX_TOKEN_ID,MUX_TOKEN_SECRET,MUX_SIGNING_KEY,MUX_PRIVATE_KEY&envDescription=Mux%20Meet%20needs%20API%20keys%20generated%20from%20the%20Mux%20Dashboard.&envLink=https%3A%2F%2Fdocs.mux.com%2Fguides%2Fvideo%2Fmake-api-requests)
