@@ -26,9 +26,6 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
 
   const joinSpace = useCallback(async (jwt: string) => {
-    (window as any).MUX_SPACES_ENABLE_SIMULCAST = true;
-    // (window as any).MUX_SPACES_SUBSCRIPTION_LIMIT = MAX_PARTICIPANTS_PER_PAGE - 1;
-
     let space: Space;
     try {
       space = new Space(jwt);

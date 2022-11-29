@@ -13,7 +13,6 @@
     "@chakra-ui/react": "^2.4.1",
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
-    "@mux/mux-player-react": "^1.4.0",
     "@mux/spaces-web": "^1.0.0",
     "@next/font": "^13.0.5",
     "axios": "^1.2.0",
