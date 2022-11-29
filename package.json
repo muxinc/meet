@@ -14,7 +14,7 @@
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
     "@mux/mux-player-react": "^1.4.0",
-    "@mux/spaces-web": "^0.3.1",
+    "@mux/spaces-web": "^1.0.0",
     "@next/font": "^13.0.5",
     "axios": "^1.2.0",
     "framer-motion": "^7.6.15",
