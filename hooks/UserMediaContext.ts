@@ -2,21 +2,24 @@ import { createContext } from "react";
 import { LocalTrack } from "@mux/spaces-web";
 
 export interface UserMediaState {
-  audioDevices: MediaDeviceInfo[];
-  audioMuted: boolean;
-  audioTrack?: LocalTrack;
-  selectedAudioDeviceId: string;
-  changeAudioDevice: (deviceId: string) => void;
-
-  videoDevices: MediaDeviceInfo[];
-  videoOff: boolean;
-  videoTrack?: LocalTrack;
-  selectedVideoDeviceId: string;
-  toggleVideo: () => void;
-  changeVideoDevice: (deviceId: string) => void;
-
-  getLocalMedia: () => void;
   userMediaError?: string;
+  requestPermissionAndPopulateDevices: () => void;
+  requestPermissionAndGetLocalMedia: (
+    microphoneDeviceId?: string,
+    cameraDeviceId?: string
+  ) => Promise<LocalTrack[]>;
+
+  activeMicrophone: LocalTrack | undefined;
+  microphoneDevices: MediaDeviceInfo[];
+  getMicrophoneDevice: (deviceId: string) => Promise<LocalTrack[]>;
+  getActiveMicrophoneLevel: () => {
+    avgDb: number;
+    peakDb: number;
+  } | null;
+
+  activeCamera: LocalTrack | undefined;
+  cameraDevices: MediaDeviceInfo[];
+  getCameraDevice: (deviceId: string) => Promise<LocalTrack[]>;
 }
 
 export const UserMediaContext = createContext({} as UserMediaState);

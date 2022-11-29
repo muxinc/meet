@@ -1,22 +1,24 @@
 import React, { useEffect, useRef } from "react";
 import { Flex } from "@chakra-ui/react";
+import { Track } from "@mux/spaces-web";
 
-import { useScreenShare } from "hooks/useScreenShare";
+interface Props {
+  track?: Track;
+}
 
-export default function ScreenShareRenderer(): JSX.Element {
-  const { screenShareTrack } = useScreenShare();
+export default function ScreenShareRenderer({ track }: Props): JSX.Element {
   const videoEl = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     const el = videoEl.current;
     if (!el) return;
 
-    el.muted = true;
-    screenShareTrack?.attach(el);
+    track?.attach(el);
+
     return () => {
-      screenShareTrack?.detach(el);
+      track?.detach(el);
     };
-  }, [screenShareTrack]);
+  }, [track]);
 
   return (
     <Flex
@@ -24,7 +26,6 @@ export default function ScreenShareRenderer(): JSX.Element {
       justifyContent="center"
       maxHeight="100%"
       maxWidth="100%"
-      padding="10px"
       position="relative"
     >
       <video

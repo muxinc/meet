@@ -13,16 +13,22 @@ import { useRouter } from "next/router";
 
 import { copyLinkToastConfig, ToastIds } from "shared/toastConfigs";
 
-import { useSpace } from "hooks/useSpace";
 import { useScreenShare } from "hooks/useScreenShare";
 import useWindowDimensions from "hooks/useWindowDimension";
 
 import SettingsIcon from "components/icons/SettingsIcon";
 import RenameParticipantModal from "components/modals/RenameParticipantModal";
 
-export default function SettingsButton(): JSX.Element {
+interface Props {
+  onLeave: () => void;
+  onRename: (newName: string) => void;
+}
+
+export default function SettingsButton({
+  onLeave,
+  onRename,
+}: Props): JSX.Element {
   const { width } = useWindowDimensions();
-  const { space } = useSpace();
   const { isLocalScreenShare } = useScreenShare();
 
   const router = useRouter();
@@ -49,6 +55,7 @@ export default function SettingsButton(): JSX.Element {
   return (
     <>
       <RenameParticipantModal
+        onRename={onRename}
         isOpen={isRenameModalOpen}
         onClose={onRenameModalClose}
       />
@@ -80,16 +87,7 @@ export default function SettingsButton(): JSX.Element {
             {showCopyInviteLink && (
               <MenuItem onClick={shareLink}>Copy Invite Link</MenuItem>
             )}
-            {showLeaveOption && (
-              <MenuItem
-                onClick={() => {
-                  space?.leave();
-                  router.push("/");
-                }}
-              >
-                Leave
-              </MenuItem>
-            )}
+            {showLeaveOption && <MenuItem onClick={onLeave}>Leave</MenuItem>}
           </MenuList>
         </Menu>
       </Box>

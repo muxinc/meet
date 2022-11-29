@@ -1,10 +1,11 @@
-import "../styles/globals.css";
-
 import type { AppProps } from "next/app";
 import { ChakraProvider } from "@chakra-ui/react";
 import { QueryClient, QueryClientProvider } from "react-query";
+
 import { theme } from "lib/theme";
 import { UserProvider } from "context/user";
+import { SpaceProvider } from "hooks/SpaceProvider";
+import { UserMediaProvider } from "hooks/UserMediaProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,7 +20,11 @@ function MyApp({ Component, pageProps }: AppProps) {
     <QueryClientProvider client={queryClient}>
       <ChakraProvider theme={theme}>
         <UserProvider>
-          <Component {...pageProps} />
+          <UserMediaProvider>
+            <SpaceProvider>
+              <Component {...pageProps} />
+            </SpaceProvider>
+          </UserMediaProvider>
         </UserProvider>
       </ChakraProvider>
     </QueryClientProvider>

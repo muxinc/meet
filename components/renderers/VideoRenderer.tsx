@@ -6,7 +6,7 @@ import posterFlipped from "../../public/poster-flipped.jpg";
 
 interface Props {
   local: boolean;
-  track: Track;
+  track?: Track;
   connectionId: string;
 }
 
@@ -30,19 +30,18 @@ export default function VideoRenderer({
     const el = videoEl.current;
     if (!el) return;
 
-    el.muted = true;
-    track.attach(el);
+    track?.attach(el);
+
     el.addEventListener("enterpictureinpicture", handleEnterPiP);
     el.addEventListener("leavepictureinpicture", handleLeavePiP);
+
     return () => {
-      track.detach(el);
+      track?.detach(el);
+
       el.removeEventListener("enterpictureinpicture", handleEnterPiP);
       el.removeEventListener("leavepictureinpicture", handleLeavePiP);
     };
-
-    // The MediaStreamTrack prop needs to be observed rather than the Mux Track
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [track.track]);
+  }, [track]);
 
   return (
     <video
@@ -54,7 +53,7 @@ export default function VideoRenderer({
       style={{
         width: "100%",
         height: "100%",
-        objectFit: "cover",
+        objectFit: track && track?.height > track?.width ? "contain" : "cover",
         transform: !disableFlip && local ? "scaleX(-1)" : "",
       }}
     />

@@ -1,10 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useCallback } from "react";
 import {
   Box,
   ButtonGroup,
   Flex,
   IconButton,
-  Image,
   Menu,
   MenuButton,
   MenuItem,
@@ -15,58 +14,76 @@ import {
 import { useHotkeys } from "react-hotkeys-hook";
 import { AiOutlineCheck } from "react-icons/ai";
 
+import UserContext from "context/user";
 import { useDevices } from "hooks/useDevices";
-import { useLocalStorage } from "hooks/useLocalStorage";
+import { useLocalParticipant } from "hooks/useLocalParticipant";
 
 import ChevronIcon from "components/icons/ChevronIcon";
+import MuteCameraIcon from "components/icons/MuteCameraIcon";
+import UnmuteCameraIcon from "components/icons/UnmuteCameraIcon";
 
-interface Props {}
+export default function CameraButton(): JSX.Element {
+  const { cameraOff, setCameraOff, cameraDeviceId, setCameraDeviceId } =
+    React.useContext(UserContext);
+  const { cameraDevices, getCameraDevice, activeCamera } = useDevices();
+  const localParticipant = useLocalParticipant();
 
-export default function VideoButton({}: Props): JSX.Element {
-  const {
-    videoDevices,
-    selectedVideoDeviceId,
-    videoOff,
-    videoTrack,
-    toggleVideo,
-    changeVideoDevice,
-  } = useDevices();
-  const [_, setPersistedVideoDeviceId] = useLocalStorage("videoDeviceId", "");
+  const selectCameraDevice = useCallback(
+    async (deviceId: string) => {
+      setCameraDeviceId(deviceId);
 
-  useEffect(() => {
-    setPersistedVideoDeviceId(selectedVideoDeviceId);
-  }, [selectedVideoDeviceId, setPersistedVideoDeviceId]);
-
-  let cameraUnmuteIcon = (
-    <Image
-      alt="unmute camera"
-      width="25px"
-      height="25px"
-      src="/cameraOff.svg"
-    />
+      if (!cameraOff) {
+        const tracks = await getCameraDevice(deviceId);
+        localParticipant?.updateTracks(tracks);
+      }
+    },
+    [setCameraDeviceId, localParticipant, cameraOff, getCameraDevice]
   );
 
-  let cameraMuteIcon = (
-    <Image alt="mute camera" width="25px" height="25px" src="/cameraOn.svg" />
-  );
+  const toggleCamera = useCallback(async () => {
+    if (cameraOff) {
+      setCameraOff(false);
+      const tracks = await getCameraDevice(cameraDeviceId);
+      localParticipant?.publishTracks(tracks);
+    } else {
+      setCameraOff(true);
+      if (activeCamera) {
+        localParticipant?.unpublishTracks([activeCamera]);
+      }
+    }
+  }, [
+    localParticipant,
+    activeCamera,
+    cameraOff,
+    setCameraOff,
+    cameraDeviceId,
+    getCameraDevice,
+  ]);
 
   const hotkeyText = "⌘ + e"; // adding this here to make it easy to change later. appears in tooltip on button.
   useHotkeys(
     "cmd+e,ctrl+e",
     (e) => {
       e.preventDefault();
-      toggleVideo();
+      toggleCamera();
     },
-    [videoTrack]
+    [
+      localParticipant,
+      activeCamera,
+      cameraOff,
+      setCameraOff,
+      cameraDeviceId,
+      getCameraDevice,
+    ]
   );
 
-  const ariaLabel = videoOff ? "Unhide" : "Hide";
+  const ariaLabel = cameraOff ? "Unhide" : "Hide";
 
   return (
     <ButtonGroup size="sm" isAttached variant="outline">
       <Tooltip
         label={
-          videoOff
+          cameraOff
             ? `Enable Video (${hotkeyText})`
             : `Disable Video (${hotkeyText})`
         }
@@ -76,8 +93,8 @@ export default function VideoButton({}: Props): JSX.Element {
           height="60px"
           variant="link"
           aria-label={ariaLabel}
-          icon={videoOff ? cameraUnmuteIcon : cameraMuteIcon}
-          onClick={toggleVideo}
+          icon={cameraOff ? <UnmuteCameraIcon /> : <MuteCameraIcon />}
+          onClick={toggleCamera}
           _hover={{
             background:
               "radial-gradient(50% 50% at 50% 50%, rgba(251, 36, 145, 0.6) 0%, rgba(251, 36, 145, 0) 100%);",
@@ -102,15 +119,15 @@ export default function VideoButton({}: Props): JSX.Element {
           <Text userSelect="none" paddingX="12px" paddingY="6px">
             CAMERA
           </Text>
-          {videoDevices.map((device) => {
+          {cameraDevices.map((device) => {
             return (
               <MenuItem
                 key={device.deviceId}
-                onClick={() => changeVideoDevice(device.deviceId)}
+                onClick={() => selectCameraDevice(device.deviceId)}
               >
                 <Flex alignItems="center">
                   {device.label}
-                  {selectedVideoDeviceId === device.deviceId && (
+                  {cameraDeviceId === device.deviceId && (
                     <Box marginLeft="10px">
                       <AiOutlineCheck />
                     </Box>

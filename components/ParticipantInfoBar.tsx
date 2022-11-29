@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { Flex, Text } from "@chakra-ui/react";
 import { LocalParticipant, RemoteParticipant } from "@mux/spaces-web";
 
 import MuteIndicator from "./MuteIndicator";
@@ -49,7 +49,6 @@ export default function ParticipantInfoBar({
       <Text fontSize={fontSize} fontWeight="700">
         {participant.id.split("|")[0]}
       </Text>
-      <Box />
     </Flex>
   );
 }
