@@ -39,7 +39,6 @@ export default function Toasts(): JSX.Element {
   const localParticipant = useLocalParticipant();
   const screenshareToastRef = useRef<ToastId>();
   const broadcastingToastRef = useRef<ToastId>();
-  const participantEventToastIdRefs = useRef<Array<ToastId>>([]);
 
   const showLocalScreenshareToast = useCallback(
     (screenshareTrack: LocalTrack) => {
@@ -219,9 +218,6 @@ export default function Toasts(): JSX.Element {
     function closeAllTosts() {
       hideBroadcastToast();
       hideScreenshareToast();
-      for (let toastRef in participantEventToastIdRefs.current) {
-        toast.close(toastRef);
-      }
     }
 
     router.events.on("routeChangeStart", closeAllTosts);
