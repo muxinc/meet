@@ -2,17 +2,25 @@ import React from "react";
 import { HStack } from "@chakra-ui/react";
 
 import MicrophoneButton from "./buttons/MicrophoneButton";
-import VideoButton from "./buttons/VideoButton";
+import CameraButton from "./buttons/CameraButton";
 import ScreenShareButton from "./buttons/ScreenShareButton";
 import SettingsButton from "./buttons/SettingsButton";
 
-export default function ControlsCenter(): JSX.Element {
+interface Props {
+  onLeave: () => void;
+  onRename: (newName: string) => void;
+}
+
+export default function ControlsCenter({
+  onLeave,
+  onRename,
+}: Props): JSX.Element {
   return (
     <HStack>
       <MicrophoneButton />
-      <VideoButton />
+      <CameraButton />
       <ScreenShareButton />
-      <SettingsButton />
+      <SettingsButton onLeave={onLeave} onRename={onRename} />
     </HStack>
   );
 }

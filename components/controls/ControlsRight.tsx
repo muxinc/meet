@@ -2,7 +2,6 @@ import React from "react";
 import { Button, Flex, Text, useToast } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 
-import { useSpace } from "hooks/useSpace";
 import useWindowDimensions from "hooks/useWindowDimension";
 
 import LeaveIcon from "components/icons/LeaveIcon";
@@ -15,7 +14,6 @@ interface Props {
 
 export default function ControlsRight({ onLeave }: Props): JSX.Element {
   const { width } = useWindowDimensions();
-  const { space } = useSpace();
   const router = useRouter();
   const toast = useToast();
 
@@ -48,11 +46,7 @@ export default function ControlsRight({ onLeave }: Props): JSX.Element {
         flexDirection="row"
         marginLeft="10px"
         padding="10px 20px"
-        onClick={() => {
-          onLeave();
-          space?.leave();
-          router.push("/");
-        }}
+        onClick={onLeave}
         _hover={{
           background: "#FFFFFF",
           border: "1px solid #999999",

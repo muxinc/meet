@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -16,9 +16,12 @@ import {
 
 import UserContext from "context/user";
 
-type Props = Pick<ReturnType<typeof useDisclosure>, "isOpen" | "onClose">;
+type Props = Pick<ReturnType<typeof useDisclosure>, "isOpen" | "onClose"> & {
+  onRename: (newName: string) => void;
+};
 
 export default function RenameParticipantModal({
+  onRename,
   isOpen,
   onClose,
 }: Props): JSX.Element {
@@ -35,18 +38,27 @@ export default function RenameParticipantModal({
     setParticipantName(event.target.value);
   };
 
-  const submit = () => {
+  const submit = useCallback(() => {
     if (invalidParticipantName) return;
 
-    user.setPromptForName!(false);
-    user.setParticipantName!(participantName);
+    if (user.participantName !== participantName) {
+      const newParticipantId = user.setParticipantName!(participantName);
+      onRename(newParticipantId);
+    }
     onClose();
-  };
+  }, [
+    invalidParticipantName,
+    onClose,
+    onRename,
+    participantName,
+    user.participantName,
+    user.setParticipantName,
+  ]);
 
   return (
     <Modal
       isCentered
-      isOpen={isOpen || user.promptForName}
+      isOpen={isOpen}
       onClose={() => {
         setParticipantName(user.participantName);
         onClose();

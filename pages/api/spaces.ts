@@ -1,26 +1,22 @@
+import axios from "axios";
 import { StatusCodes } from "http-status-codes";
+import { muxClient } from "server-lib/services";
 import { NextApiRequest, NextApiResponse } from "next";
 
-const { MUX_TOKEN_ID, MUX_TOKEN_SECRET } = process.env;
-
 const fetchSpaces = async () => {
-  const auth = Buffer.from(`${MUX_TOKEN_ID}:${MUX_TOKEN_SECRET}`).toString(
-    "base64"
-  );
-  const response = await fetch(
-    `https://api.mux.com/video/v1/spaces?limit=100`,
-    {
-      headers: {
-        Authorization: `Basic ${auth}`,
-      },
-    }
-  );
+  let response;
 
-  if (!response.ok) {
-    throw new Error(`Error: ${response.status}`);
+  try {
+    response = await muxClient.get(`/video/v1/spaces?limit=100`);
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`Error: ${error.response?.status}`);
+    }
+
+    throw new Error("Unknown error");
   }
-  const { data } = await response.json();
-  return data;
+
+  return response.data.data;
 };
 
 export default async function handler(

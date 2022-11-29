@@ -1,29 +1,14 @@
 import React from "react";
-import { IconButton, Image, Tooltip } from "@chakra-ui/react";
+import { IconButton, Tooltip } from "@chakra-ui/react";
 
 import { useScreenShare } from "hooks/useScreenShare";
+
+import ScreenShareOnIcon from "../../icons/ScreenShareOnIcon";
+import ScreenShareOffIcon from "../../icons/ScreenShareOffIcon";
 
 export default function ScreenShareButton(): JSX.Element {
   const { isLocalScreenShare, screenShareTrack, toggleScreenShare } =
     useScreenShare();
-
-  let stopScreenShare = (
-    <Image
-      alt="screen share on"
-      width="25px"
-      height="25px"
-      src="/screenShareOn.svg"
-    />
-  );
-
-  let startScreenShare = (
-    <Image
-      alt="screen share off"
-      width="25px"
-      height="25px"
-      src="/screenShareOff.svg"
-    />
-  );
 
   return (
     <Tooltip
@@ -40,7 +25,7 @@ export default function ScreenShareButton(): JSX.Element {
         height="60px"
         variant="link"
         aria-label="Share Screen"
-        icon={screenShareTrack ? stopScreenShare : startScreenShare}
+        icon={screenShareTrack ? <ScreenShareOnIcon /> : <ScreenShareOffIcon />}
         onClick={toggleScreenShare}
         _hover={{
           background:

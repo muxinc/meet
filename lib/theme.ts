@@ -1,6 +1,22 @@
+import localFont from "@next/font/local";
 import { extendTheme } from "@chakra-ui/react";
 
+const akkuratFont = localFont({ src: "./Akkurat-Regular.woff2" });
+
 export const theme = extendTheme({
+  fonts: {
+    heading: `${akkuratFont.style.fontFamily}, sans-serif`,
+    body: `${akkuratFont.style.fontFamily}, sans-serif`,
+  },
+  styles: {
+    global: () => ({
+      body: {
+        width: "100%",
+        height: "100%",
+        position: "fixed",
+      },
+    }),
+  },
   colors: {
     red: {
       50: "#FFE0E3",
@@ -61,17 +77,11 @@ export const theme = extendTheme({
     },
   },
   components: {
-    Button: {
-      baseStyle: {
-        _focus: {
-          boxShadow: "none",
-        },
-      },
-    },
     Menu: {
       parts: ["item"],
       baseStyle: {
         item: {
+          background: "#383838",
           _focus: {
             background: "transparent",
           },

@@ -13,23 +13,38 @@ import {
   FormHelperText,
   Flex,
   Center,
+  HStack,
 } from "@chakra-ui/react";
 import { useQuery } from "react-query";
 
+import UserContext from "context/user";
+import { useDevices } from "hooks/useDevices";
+
 import Header from "components/Header";
 import SpaceMan from "components/SpaceMan";
-import UserContext from "context/user";
+import MicrophoneButton from "components/controls/buttons/MicrophoneButton";
+import CameraButton from "components/controls/buttons/CameraButton";
 
 const Home = () => {
   const router = useRouter();
+  const { isReady: isRouterReady } = router;
+  const { spaceId: spaceIdQuery } = router.query;
   const user = React.useContext(UserContext);
   const [loading, setLoading] = useState(true);
   const [spaceId, setSpaceId] = useState("");
-  const [participantName, setParticipantName] = useState("");
+  const [participantName, setParticipantName] = useState(user.participantName);
   const [joining, setJoining] = useState(false);
+  const { requestPermissionAndPopulateDevices } = useDevices();
 
   const { data: spaces } = useQuery(["Spaces"], () =>
-    fetch(`/api/spaces`).then((res) => res.json())
+    fetch(`/api/spaces`)
+      .then((res) => res.json())
+      .then((spaceList: { passthrough: string; id: string }[]) => {
+        return spaceList.filter((space) => {
+          const label = space.passthrough ?? space.id;
+          return !label.startsWith("slack");
+        });
+      })
   );
 
   const invalidSpaceId = useCallback(
@@ -45,14 +60,27 @@ const Home = () => {
   );
 
   useEffect(() => {
-    if (!invalidSpaceId(user.spaceId)) {
+    if (!isRouterReady) return;
+
+    if (typeof spaceIdQuery === "string" && !invalidSpaceId(spaceIdQuery)) {
+      setSpaceId(spaceIdQuery);
+    } else if (!invalidSpaceId(user.spaceId)) {
       setSpaceId(user.spaceId);
     } else if (spaces && spaces.length > 0) {
       setSpaceId(spaces[0].id);
     }
-    setParticipantName(user.participantName);
+
+    requestPermissionAndPopulateDevices();
     setLoading(false);
-  }, [spaces, user.spaceId, user.participantName, invalidSpaceId]);
+  }, [
+    spaces,
+    spaceIdQuery,
+    user.spaceId,
+    isRouterReady,
+    invalidSpaceId,
+    user.participantName,
+    requestPermissionAndPopulateDevices,
+  ]);
 
   const invalidParticipantName = useMemo(
     () => !participantName,
@@ -95,67 +123,70 @@ const Home = () => {
         <link rel="icon" href="/favicon.png" />
       </Head>
 
-      <Flex direction="column" height="100%" backgroundColor="#333">
+      <Flex direction="column" height="100vh" backgroundColor="#323232">
         <Header />
-        <Center height="100%">
-          <Box
-            background="white"
-            padding="4"
-            borderRadius="4"
-            width="50%"
-            minWidth="400px"
-            maxWidth="700px"
-          >
-            <form onSubmit={handleSubmit}>
-              <Stack spacing="4">
-                <Heading>Join a Space</Heading>
+        <Center height="100%" zIndex={1}>
+          <Flex direction="column" align="center">
+            <Box background="white" padding="4" borderRadius="4" width="360px">
+              <form onSubmit={handleSubmit}>
+                <Stack spacing="4">
+                  <Heading>Join a Space</Heading>
 
-                <FormControl isInvalid={!loading && invalidParticipantName}>
-                  <FormLabel>Your Name</FormLabel>
-                  <Input
-                    maxLength={40}
-                    id="participant_name"
-                    value={participantName}
-                    onChange={handleParticipantNameChange}
-                  />
-                  <FormHelperText hidden={loading || !invalidParticipantName}>
-                    This cannot be empty.
-                  </FormHelperText>
-                </FormControl>
+                  <FormControl isInvalid={!loading && invalidParticipantName}>
+                    <FormLabel>Your Name</FormLabel>
+                    <Input
+                      maxLength={40}
+                      id="participant_name"
+                      value={participantName}
+                      onChange={handleParticipantNameChange}
+                    />
+                    <FormHelperText
+                      color={
+                        loading || !invalidParticipantName ? "white" : "#E22C3E"
+                      }
+                    >
+                      This cannot be empty.
+                    </FormHelperText>
+                  </FormControl>
 
-                <FormControl>
-                  <FormLabel>Space</FormLabel>
-                  <Select
-                    onChange={handleSpaceIdChange}
-                    value={spaceId}
-                    disabled={!spaces}
+                  <FormControl>
+                    <FormLabel>Space</FormLabel>
+                    <Select
+                      onChange={handleSpaceIdChange}
+                      value={spaceId}
+                      disabled={!spaces}
+                    >
+                      {!spaces && <option>Loading...</option>}
+                      {spaces &&
+                        spaces.map((space: any) => {
+                          const label = space.passthrough ?? space.id;
+                          return (
+                            <option key={space.id} value={space.id}>
+                              {label}
+                            </option>
+                          );
+                        })}
+                    </Select>
+                  </FormControl>
+
+                  <Button
+                    type="submit"
+                    width="full"
+                    isDisabled={disableJoin}
+                    isLoading={joining}
                   >
-                    {!spaces && <option>Loading...</option>}
-                    {spaces &&
-                      spaces.map((space: any) => {
-                        const label = space.passthrough ?? space.id;
-                        return (
-                          <option key={space.id} value={space.id}>
-                            {label}
-                          </option>
-                        );
-                      })}
-                  </Select>
-                </FormControl>
-
-                <Button
-                  type="submit"
-                  width="full"
-                  isDisabled={disableJoin}
-                  isLoading={joining}
-                >
-                  Join
-                </Button>
-              </Stack>
-            </form>
-          </Box>
+                    Join
+                  </Button>
+                </Stack>
+              </form>
+            </Box>
+            <HStack>
+              <MicrophoneButton />
+              <CameraButton />
+            </HStack>
+          </Flex>
         </Center>
-        <SpaceMan bottom="0px" />
+        <SpaceMan />
       </Flex>
     </>
   );

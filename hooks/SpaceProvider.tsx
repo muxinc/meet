@@ -1,41 +1,31 @@
-import React, { ReactNode, useEffect, useRef, useState } from "react";
+import React, { ReactNode, useCallback, useRef, useState } from "react";
 import {
+  ActiveSpeaker,
   LocalParticipant,
   RemoteParticipant,
   Space,
   SpaceEvent,
 } from "@mux/spaces-web";
 
+import { MAX_PARTICIPANTS_PER_PAGE } from "lib/constants";
+
 import { MuxContext } from "./MuxContext";
-import { UserMediaProvider } from "./UserMediaProvider";
 import { DisplayMediaProvider } from "./DisplayMediaProvider";
 
 type Props = {
-  jwt?: string;
   children: ReactNode;
-  defaultAudioDeviceId?: string;
-  defaultVideoDeviceId?: string;
 };
 
-export const SpaceProvider: React.FC<Props> = ({
-  children,
-  jwt,
-  defaultAudioDeviceId = "",
-  defaultVideoDeviceId = "",
-}) => {
+export const SpaceProvider: React.FC<Props> = ({ children }) => {
   const spaceRef = useRef<Space | null>(null);
   const [participants, setParticipants] = useState<RemoteParticipant[]>([]);
   const [localParticipant, setLocalParticipant] =
     useState<LocalParticipant | null>(null);
+  const [isJoined, setIsJoined] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
 
-  useEffect(() => {
-    if (!jwt) {
-      return;
-    }
-
-    (window as any).MUX_SPACES_ENABLE_SIMULCAST = true;
-
+  const joinSpace = useCallback(async (jwt: string) => {
     let space: Space;
     try {
       space = new Space(jwt);
@@ -64,46 +54,106 @@ export const SpaceProvider: React.FC<Props> = ({
       );
     };
 
+    const handleActiveSpeakerChanged = (
+      activeSpeakerChanges: ActiveSpeaker[]
+    ) => {
+      setParticipants((oldParticipantArray) => {
+        const updatedParticipants = [...oldParticipantArray];
+
+        activeSpeakerChanges.forEach((activeSpeaker: ActiveSpeaker) => {
+          if (activeSpeaker.participant instanceof RemoteParticipant) {
+            const participantIndex = updatedParticipants.findIndex(
+              (p) => p.connectionId === activeSpeaker.participant.connectionId
+            );
+
+            if (participantIndex >= MAX_PARTICIPANTS_PER_PAGE - 1) {
+              updatedParticipants.splice(participantIndex, 1);
+              updatedParticipants.unshift(activeSpeaker.participant);
+            }
+          }
+        });
+        return updatedParticipants;
+      });
+    };
+
+    const handleParticipantTrackSubscriptionChange = (
+      participantWhoChanged: RemoteParticipant
+    ) => {
+      setParticipants((oldParticipantArray) => {
+        const updatedSubscriptionParticipants = oldParticipantArray.map(
+          (oldParticipant) =>
+            oldParticipant.connectionId === participantWhoChanged.connectionId
+              ? participantWhoChanged
+              : oldParticipant
+        );
+
+        return [
+          ...updatedSubscriptionParticipants.filter((p) => p.isSubscribed()),
+          ...updatedSubscriptionParticipants.filter((p) => !p.isSubscribed()),
+        ];
+      });
+    };
+
+    const handleBroadcastStateChange = (broadcastState: boolean) => {
+      setIsBroadcasting(broadcastState);
+    };
+
     space.on(SpaceEvent.ParticipantJoined, handleParticipantJoined);
     space.on(SpaceEvent.ParticipantLeft, handleParticipantLeft);
 
-    space
-      .join()
-      .then((_localParticipant: LocalParticipant) => {
-        setLocalParticipant(_localParticipant);
-      })
-      .catch((error) => {
-        setJoinError(error.message);
-      });
+    space.on(SpaceEvent.ActiveSpeakersChanged, handleActiveSpeakerChanged);
+    space.on(SpaceEvent.BroadcastStateChanged, handleBroadcastStateChange);
+
+    space.on(
+      SpaceEvent.ParticipantTrackSubscribed,
+      handleParticipantTrackSubscriptionChange
+    );
+    space.on(
+      SpaceEvent.ParticipantTrackUnsubscribed,
+      handleParticipantTrackSubscriptionChange
+    );
 
     spaceRef.current = space;
 
-    return () => {
-      space.off(SpaceEvent.ParticipantJoined, handleParticipantJoined);
-      space.off(SpaceEvent.ParticipantLeft, handleParticipantLeft);
+    let _localParticipant;
+    try {
+      _localParticipant = await space.join();
+      setLocalParticipant(_localParticipant);
+      setIsBroadcasting(space.broadcasting);
+      setIsJoined(true);
+    } catch (error: any) {
+      setJoinError(error.message);
+      setIsBroadcasting(false);
+      setIsJoined(false);
+    }
+    return _localParticipant;
+  }, []);
 
-      setParticipants([]);
-      space.leave();
-    };
-  }, [jwt, setJoinError]);
+  const leaveSpace = useCallback(() => {
+    spaceRef.current?.removeAllListeners();
+    spaceRef.current?.leave();
+    setJoinError(null);
+    setParticipants([]);
+    setIsBroadcasting(false);
+    setLocalParticipant(null);
+    spaceRef.current = null;
+    setIsJoined(false);
+  }, []);
 
   return (
     <MuxContext.Provider
       value={{
+        joinSpace,
+        leaveSpace,
         space: spaceRef.current,
         participants,
         localParticipant,
         joinError,
+        isJoined,
+        isBroadcasting,
       }}
     >
-      <DisplayMediaProvider>
-        <UserMediaProvider
-          defaultAudioDeviceId={defaultAudioDeviceId}
-          defaultVideoDeviceId={defaultVideoDeviceId}
-        >
-          {children}
-        </UserMediaProvider>
-      </DisplayMediaProvider>
+      <DisplayMediaProvider>{children}</DisplayMediaProvider>
     </MuxContext.Provider>
   );
 };

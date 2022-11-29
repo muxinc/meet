@@ -6,8 +6,8 @@ import { MuxContext } from "./MuxContext";
 /**
  * Returns an array of participants passed to or created by closest <SpaceProvider>.
  */
-export const useParticipants = (): RemoteParticipant[] | undefined => {
+export const useParticipants = (): RemoteParticipant[] => {
   const mux = useContext(MuxContext);
 
-  return mux?.participants;
+  return mux.participants;
 };

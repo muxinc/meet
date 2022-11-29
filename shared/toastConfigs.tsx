@@ -32,14 +32,6 @@ export const copyLinkToastConfig: UseToastOptions = {
 };
 
 export const sharingScreenToastConfig: UseToastOptions = {
-  id: ToastIds.VIEWING_SHARED_SCREEN_TOAST_ID,
-  isClosable: false,
-  position: "top",
-  status: "success",
-  duration: null,
-};
-
-export const viewingSharedScreenToastId: UseToastOptions = {
   id: ToastIds.SHARING_SCREEN_TOAST_ID,
   isClosable: false,
   position: "top",
@@ -47,10 +39,26 @@ export const viewingSharedScreenToastId: UseToastOptions = {
   duration: null,
 };
 
-export const broadcastingToastId: UseToastOptions = {
+export const viewingSharedScreenToastConfig: UseToastOptions = {
+  id: ToastIds.VIEWING_SHARED_SCREEN_TOAST_ID,
+  isClosable: false,
+  position: "top",
+  status: "success",
+  duration: null,
+};
+
+export const broadcastingToastConfig: UseToastOptions = {
   id: ToastIds.BROADCASTING_SCREEN_TOAST_ID,
   isClosable: false,
   position: "top-left",
   status: "success",
   duration: null,
+};
+
+export const participantEventToastConfig: UseToastOptions = {
+  // Don't set id, as we expect to have multiple on screen at the same time
+  isClosable: true,
+  position: "top-right",
+  status: "success",
+  duration: 3000,
 };

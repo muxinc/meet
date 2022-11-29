@@ -1,18 +1,23 @@
-import React, { ReactNode, useCallback, useEffect, useState } from "react";
+import React, {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   Track,
   RemoteParticipant,
-  RemoteTrack,
   TrackSource,
   SpaceEvent,
   LocalTrack,
   LocalParticipant,
+  getDisplayMedia,
 } from "@mux/spaces-web";
 
 import { useSpace } from "./useSpace";
 import { useLocalParticipant } from "./useLocalParticipant";
 import { DisplayMediaContext } from "./DisplayMediaContext";
-import { useMemo } from "react";
 
 type Props = {
   children: ReactNode;
@@ -21,7 +26,7 @@ type Props = {
 export const DisplayMediaProvider: React.FC<Props> = ({ children }) => {
   const { space } = useSpace();
   const localParticipant = useLocalParticipant();
-  const [screenShareTrack, setScreenShareTrack] = useState<Track | null>(null);
+  const [screenShareTrack, setScreenShareTrack] = useState<Track>();
   const [screenShareError, setScreenShareError] = useState("");
   const [participantScreenSharing, setParticipantScreenSharing] = useState<
     LocalParticipant | RemoteParticipant | null
@@ -31,52 +36,54 @@ export const DisplayMediaProvider: React.FC<Props> = ({ children }) => {
     return participantScreenSharing instanceof LocalParticipant;
   }, [participantScreenSharing]);
 
-  // Screenshare subscribed
   useEffect(() => {
-    const handleScreenShareSubscribed = (
-      participant: RemoteParticipant,
-      track: RemoteTrack
+    const handleScreenShareStarted = (
+      participant: LocalParticipant | RemoteParticipant,
+      track: Track
     ) => {
-      if (track.source === TrackSource.Screenshare) {
+      if (track.source === TrackSource.Screenshare && track.hasMedia()) {
         setScreenShareTrack(track);
         setParticipantScreenSharing(participant);
       }
     };
 
-    space?.on(
-      SpaceEvent.ParticipantTrackSubscribed,
-      handleScreenShareSubscribed
-    );
+    space?.on(SpaceEvent.ParticipantTrackPublished, handleScreenShareStarted);
+    space?.on(SpaceEvent.ParticipantTrackSubscribed, handleScreenShareStarted);
 
     return () => {
       space?.off(
+        SpaceEvent.ParticipantTrackPublished,
+        handleScreenShareStarted
+      );
+      space?.off(
         SpaceEvent.ParticipantTrackSubscribed,
-        handleScreenShareSubscribed
+        handleScreenShareStarted
       );
     };
   }, [space]);
 
-  // Screenshare unsubscribed
   useEffect(() => {
-    const handleScreenShareUnsubscribed = (
-      _participant: RemoteParticipant,
-      track: RemoteTrack
+    const handleScreenShareEnded = (
+      _participant: LocalParticipant | RemoteParticipant,
+      track: Track
     ) => {
       if (track.source === TrackSource.Screenshare) {
-        setScreenShareTrack(null);
+        setScreenShareTrack(undefined);
         setParticipantScreenSharing(null);
       }
     };
 
-    space?.on(
-      SpaceEvent.ParticipantTrackUnpublished,
-      handleScreenShareUnsubscribed
-    );
+    space?.on(SpaceEvent.ParticipantTrackUnpublished, handleScreenShareEnded);
+    space?.on(SpaceEvent.ParticipantTrackUnsubscribed, handleScreenShareEnded);
 
     return () => {
       space?.off(
-        SpaceEvent.ParticipantTrackSubscribed,
-        handleScreenShareUnsubscribed
+        SpaceEvent.ParticipantTrackUnpublished,
+        handleScreenShareEnded
+      );
+      space?.off(
+        SpaceEvent.ParticipantTrackUnsubscribed,
+        handleScreenShareEnded
       );
     };
   }, [space]);
@@ -93,24 +100,18 @@ export const DisplayMediaProvider: React.FC<Props> = ({ children }) => {
 
       // Stop screen share
       localParticipant?.unpublishTracks([screenShareTrack]);
-      screenShareTrack.track?.stop();
-      setScreenShareTrack(null);
-      setParticipantScreenSharing(null);
     } else {
       // Start screen share
       try {
-        const screenStream = await localParticipant?.getDisplayMedia({
-          video: {},
+        const screenStreams = await getDisplayMedia({
+          video: true,
+          audio: false,
         });
+        const screenStream = screenStreams?.find(
+          (track) => track.source === "screenshare"
+        );
         if (screenStream) {
-          localParticipant?.publishTracks(screenStream);
-          screenStream[0].track.onended = function () {
-            localParticipant?.unpublishTracks(screenStream);
-            setScreenShareTrack(null);
-            setParticipantScreenSharing(null);
-          };
-          setScreenShareTrack(screenStream[0]);
-          setParticipantScreenSharing(localParticipant);
+          localParticipant?.publishTracks([screenStream]);
         }
       } catch (error) {
         if (error instanceof Error) {

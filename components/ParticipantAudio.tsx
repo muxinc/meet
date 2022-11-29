@@ -1,5 +1,5 @@
 import React from "react";
-import { RemoteParticipant, TrackSource } from "@mux/spaces-web";
+import { RemoteParticipant } from "@mux/spaces-web";
 
 import { useParticipant } from "hooks/useParticipant";
 
@@ -10,13 +10,9 @@ interface Props {
 }
 
 const ParticipantAudio = ({ participant }: Props) => {
-  const { subscribedTracks } = useParticipant(participant);
+  const { microphoneTrack } = useParticipant(participant);
 
-  const micTrack = subscribedTracks.find((audioTrack) => {
-    return audioTrack.source === TrackSource.Microphone;
-  });
-
-  return <>{micTrack && <AudioRenderer track={micTrack} />}</>;
+  return <AudioRenderer track={microphoneTrack} />;
 };
 
 export default ParticipantAudio;
