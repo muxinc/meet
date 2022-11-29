@@ -16,6 +16,7 @@ import { useLocalParticipant } from "hooks/useLocalParticipant";
 
 import {
   broadcastingToastConfig,
+  participantEventToastConfig,
   sharingScreenToastConfig,
   ToastIds,
   viewingSharedScreenToastConfig,
@@ -39,6 +40,7 @@ export default function Toasts(): JSX.Element {
   const localParticipant = useLocalParticipant();
   const screenshareToastRef = useRef<ToastId>();
   const broadcastingToastRef = useRef<ToastId>();
+  const participantEventToastIdRefs = useRef<Array<ToastId>>([]);
 
   const showLocalScreenshareToast = useCallback(
     (screenshareTrack: LocalTrack) => {
@@ -106,6 +108,18 @@ export default function Toasts(): JSX.Element {
     }
   }, [toast]);
 
+  const showParticipantEventToast = useCallback(
+    (eventDescription: string) => {
+      participantEventToastIdRefs.current.push(
+        toast({
+          ...participantEventToastConfig,
+          render: () => <ToastBox>{eventDescription}</ToastBox>,
+        })
+      );
+    },
+    [toast]
+  );
+
   useEffect(() => {
     if (!space) return;
 
@@ -115,6 +129,16 @@ export default function Toasts(): JSX.Element {
       } else {
         hideBroadcastToast();
       }
+    };
+
+    const handleParticipantJoined = (participant: RemoteParticipant) => {
+      let participantName = participant.id.split("|")[0];
+      showParticipantEventToast(`${participantName} joined the space`);
+    };
+
+    const handleParticipantLeft = (participant: RemoteParticipant) => {
+      let participantName = participant.id.split("|")[0];
+      showParticipantEventToast(`${participantName} left the space`);
     };
 
     const handleParticipantTrackPublished = (
@@ -165,6 +189,8 @@ export default function Toasts(): JSX.Element {
     };
 
     space.on(SpaceEvent.BroadcastStateChanged, handleBroadcastStateChange);
+    space.on(SpaceEvent.ParticipantJoined, handleParticipantJoined);
+    space.on(SpaceEvent.ParticipantLeft, handleParticipantLeft);
 
     space.on(
       SpaceEvent.ParticipantTrackPublished,
@@ -185,6 +211,8 @@ export default function Toasts(): JSX.Element {
 
     return () => {
       space.off(SpaceEvent.BroadcastStateChanged, handleBroadcastStateChange);
+      space.off(SpaceEvent.ParticipantJoined, handleParticipantJoined);
+      space.off(SpaceEvent.ParticipantLeft, handleParticipantLeft);
 
       space.off(
         SpaceEvent.ParticipantTrackPublished,
@@ -210,6 +238,7 @@ export default function Toasts(): JSX.Element {
     showLocalScreenshareToast,
     showRemoteScreenshareToast,
     hideScreenshareToast,
+    showParticipantEventToast,
   ]);
 
   useEffect(() => {
@@ -218,6 +247,9 @@ export default function Toasts(): JSX.Element {
     function closeAllTosts() {
       hideBroadcastToast();
       hideScreenshareToast();
+      for (let toastRef in participantEventToastIdRefs.current) {
+        toast.close(toastRef);
+      }
     }
 
     router.events.on("routeChangeStart", closeAllTosts);

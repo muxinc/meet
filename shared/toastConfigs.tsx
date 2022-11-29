@@ -54,3 +54,11 @@ export const broadcastingToastConfig: UseToastOptions = {
   status: "success",
   duration: null,
 };
+
+export const participantEventToastConfig: UseToastOptions = {
+  // Don't set id, as we expect to have multiple on screen at the same time
+  isClosable: true,
+  position: "top-right",
+  status: "success",
+  duration: 3000,
+};
