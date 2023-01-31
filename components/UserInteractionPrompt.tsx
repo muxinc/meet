@@ -1,10 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import Image from "next/image";
 import { Button, Flex, HStack } from "@chakra-ui/react";
 import { HiOutlineArrowNarrowRight } from "react-icons/hi";
 
-import UserContext from "context/user";
-import { useDevices } from "hooks/useDevices";
+import UserContext from "context/User";
+import { useUserMedia } from "hooks/useUserMedia";
 
 import MicrophoneButton from "components/controls/buttons/MicrophoneButton";
 import CameraButton from "components/controls/buttons/CameraButton";
@@ -18,11 +18,15 @@ interface Props {
 export default function UserInteractionPrompt({
   onInteraction,
 }: Props): JSX.Element {
+  const didPopulateDevicesRef = useRef(false);
   const { setInteractionRequired } = React.useContext(UserContext);
-  const { requestPermissionAndPopulateDevices } = useDevices();
+  const { requestPermissionAndPopulateDevices } = useUserMedia();
 
   useEffect(() => {
-    requestPermissionAndPopulateDevices();
+    if (didPopulateDevicesRef.current === false) {
+      didPopulateDevicesRef.current = true;
+      requestPermissionAndPopulateDevices();
+    }
   }, [requestPermissionAndPopulateDevices]);
 
   return (

@@ -15,7 +15,7 @@ interface Props {
 
 export default function Controls({ renameCallback }: Props): JSX.Element {
   const router = useRouter();
-  const { space } = useSpace();
+  const { leaveSpace } = useSpace();
   const { isOpen: isACRScoreDialogOpen, onOpen: onACRScoreDialogOpen } =
     useDisclosure();
 
@@ -24,13 +24,14 @@ export default function Controls({ renameCallback }: Props): JSX.Element {
   }, [router]);
 
   const promptForACR = useCallback(() => {
-    if (space) {
-      space.leave();
+    try {
+      leaveSpace();
       onACRScoreDialogOpen();
-    } else {
+    } catch (error) {
+      console.error(`Unable to properly leave space: ${error}`);
       leaveSpacePage();
     }
-  }, [space, leaveSpacePage, onACRScoreDialogOpen]);
+  }, [leaveSpace, leaveSpacePage, onACRScoreDialogOpen]);
 
   return (
     <>

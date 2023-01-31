@@ -14,9 +14,9 @@ import {
 import { useHotkeys } from "react-hotkeys-hook";
 import { AiOutlineCheck } from "react-icons/ai";
 
-import UserContext from "context/user";
-import { useDevices } from "hooks/useDevices";
-import { useLocalParticipant } from "hooks/useLocalParticipant";
+import UserContext from "context/User";
+import { useSpace } from "hooks/useSpace";
+import { useUserMedia } from "hooks/useUserMedia";
 
 import ChevronIcon from "components/icons/ChevronIcon";
 import MuteMicrophoneIcon from "components/icons/MuteMicrophoneIcon";
@@ -31,11 +31,11 @@ export default function MicrophoneButton(): JSX.Element {
   } = React.useContext(UserContext);
   const {
     microphoneDevices,
-    getMicrophoneDevice,
-    activeMicrophone,
+    muteActiveMicrophone,
+    unMuteActiveMicrophone,
     getActiveMicrophoneLevel,
-  } = useDevices();
-  const localParticipant = useLocalParticipant();
+  } = useUserMedia();
+  const { isJoined, publishMicrophone } = useSpace();
   const [temporaryUnmute, setTemporaryUnmute] = useState(false);
   const [mouseOver, setMouseOver] = useState(false);
   const [micLevelPercent, setMicLevelPercent] = useState(0);
@@ -46,21 +46,27 @@ export default function MicrophoneButton(): JSX.Element {
   const selectAudioDevice = useCallback(
     async (deviceId: string) => {
       setMicrophoneDeviceId(deviceId);
-      const tracks = await getMicrophoneDevice(deviceId);
-      localParticipant?.updateTracks(tracks);
+      if (isJoined) {
+        publishMicrophone(deviceId);
+      }
     },
-    [setMicrophoneDeviceId, localParticipant, getMicrophoneDevice]
+    [isJoined, setMicrophoneDeviceId, publishMicrophone]
   );
 
   const toggleMicrophone = useCallback(() => {
     if (microphoneMuted) {
       setMicrophoneMuted(false);
-      activeMicrophone?.unMute();
+      unMuteActiveMicrophone();
     } else {
       setMicrophoneMuted(true);
-      activeMicrophone?.mute();
+      muteActiveMicrophone();
     }
-  }, [activeMicrophone, microphoneMuted, setMicrophoneMuted]);
+  }, [
+    microphoneMuted,
+    setMicrophoneMuted,
+    muteActiveMicrophone,
+    unMuteActiveMicrophone,
+  ]);
 
   const animateMeter = useCallback(() => {
     if (requestRef.current != undefined && getActiveMicrophoneLevel) {
@@ -95,39 +101,37 @@ export default function MicrophoneButton(): JSX.Element {
 
   const hotkeyText = "⌘ + d"; // adding this here to make it easy to change later. appears in tooltip on button.
   useHotkeys(
-    "cmd+d,ctrl+d",
-    (e) => {
-      e.preventDefault();
+    "meta+d",
+    () => {
       toggleMicrophone();
     },
-    [activeMicrophone, microphoneMuted, setMicrophoneMuted]
+    { preventDefault: true },
+    [toggleMicrophone]
   );
 
   useHotkeys(
     "space",
-    (e: Event) => {
-      e.preventDefault();
+    () => {
       if (microphoneMuted && !temporaryUnmute) {
-        activeMicrophone?.unMute();
+        unMuteActiveMicrophone();
         setTemporaryUnmute(true);
       }
     },
-    { keydown: true },
-    [activeMicrophone, microphoneMuted, temporaryUnmute]
+    { keydown: true, preventDefault: true },
+    [unMuteActiveMicrophone, microphoneMuted, temporaryUnmute]
   );
   useHotkeys(
     "space",
-    (e: Event) => {
-      e.preventDefault();
+    () => {
       if (temporaryUnmute) {
         setTemporaryUnmute(false);
         if (microphoneMuted) {
-          activeMicrophone?.mute();
+          muteActiveMicrophone();
         }
       }
     },
-    { keyup: true },
-    [activeMicrophone, microphoneMuted, temporaryUnmute]
+    { keyup: true, preventDefault: true },
+    [muteActiveMicrophone, microphoneMuted, temporaryUnmute]
   );
 
   const ariaLabel = microphoneMuted ? "Unmute" : "Mute";

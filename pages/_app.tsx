@@ -3,9 +3,9 @@ import { ChakraProvider } from "@chakra-ui/react";
 import { QueryClient, QueryClientProvider } from "react-query";
 
 import { theme } from "lib/theme";
-import { UserProvider } from "context/user";
-import { SpaceProvider } from "hooks/SpaceProvider";
-import { UserMediaProvider } from "hooks/UserMediaProvider";
+import { UserProvider } from "context/User";
+import { SpaceProvider } from "context/Space";
+import { UserMediaProvider } from "context/UserMedia";
 
 const queryClient = new QueryClient({
   defaultOptions: {

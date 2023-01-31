@@ -10,10 +10,7 @@ export enum ToastIds {
 
 export const copyLinkToastConfig: UseToastOptions = {
   id: ToastIds.COPY_LINK_TOAST_ID,
-  isClosable: true,
   position: "top",
-  status: "error",
-  title: "Share link copied to your clipboard.",
   render: () => {
     return (
       <Box
@@ -33,25 +30,19 @@ export const copyLinkToastConfig: UseToastOptions = {
 
 export const sharingScreenToastConfig: UseToastOptions = {
   id: ToastIds.SHARING_SCREEN_TOAST_ID,
-  isClosable: false,
   position: "top",
-  status: "success",
   duration: null,
 };
 
 export const viewingSharedScreenToastConfig: UseToastOptions = {
   id: ToastIds.VIEWING_SHARED_SCREEN_TOAST_ID,
-  isClosable: false,
   position: "top",
-  status: "success",
   duration: null,
 };
 
 export const broadcastingToastConfig: UseToastOptions = {
   id: ToastIds.BROADCASTING_SCREEN_TOAST_ID,
-  isClosable: false,
   position: "top-left",
-  status: "success",
   duration: null,
 };
 
@@ -59,6 +50,5 @@ export const participantEventToastConfig: UseToastOptions = {
   // Don't set id, as we expect to have multiple on screen at the same time
   isClosable: true,
   position: "top-right",
-  status: "success",
   duration: 3000,
 };

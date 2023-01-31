@@ -1,23 +1,18 @@
-import { Track } from "@mux/spaces-web";
 import { useEffect, useRef } from "react";
 
 interface AudioTrackProps {
-  track?: Track;
+  attach: (element: HTMLAudioElement) => void;
 }
 
-const AudioRenderer = ({ track }: AudioTrackProps) => {
+const AudioRenderer = ({ attach }: AudioTrackProps) => {
   const audioEl = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const el = audioEl.current;
     if (!el) return;
 
-    track?.attach(el);
-
-    return () => {
-      track?.detach(el);
-    };
-  }, [track]);
+    attach(el);
+  }, [attach]);
 
   return <audio ref={audioEl} autoPlay />;
 };

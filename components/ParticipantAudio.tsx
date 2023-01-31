@@ -1,18 +1,17 @@
 import React from "react";
-import { RemoteParticipant } from "@mux/spaces-web";
 
 import { useParticipant } from "hooks/useParticipant";
 
 import AudioRenderer from "./renderers/AudioRenderer";
 
 interface Props {
-  participant: RemoteParticipant;
+  connectionId: string;
 }
 
-const ParticipantAudio = ({ participant }: Props) => {
-  const { microphoneTrack } = useParticipant(participant);
+const ParticipantAudio = ({ connectionId }: Props) => {
+  const { isLocal, attachMicrophone } = useParticipant(connectionId);
 
-  return <AudioRenderer track={microphoneTrack} />;
+  return !isLocal ? <AudioRenderer attach={attachMicrophone} /> : null;
 };
 
 export default ParticipantAudio;

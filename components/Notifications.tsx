@@ -1,18 +1,16 @@
 import { useState, useEffect } from "react";
 import { useDisclosure } from "@chakra-ui/react";
 
-import { useDevices } from "hooks/useDevices";
-import { useScreenShare } from "hooks/useScreenShare";
 import { useSpace } from "hooks/useSpace";
+import { useUserMedia } from "hooks/useUserMedia";
 
 import Sounds from "./Sounds";
 import Toasts from "./Toasts";
 import ErrorModal from "./modals/ErrorModal";
 
 export default function Notifications(): JSX.Element {
-  const { joinError } = useSpace();
-  const { userMediaError } = useDevices();
-  const { screenShareError } = useScreenShare();
+  const { joinError, screenShareError } = useSpace();
+  const { userMediaError } = useUserMedia();
   const [errorModalTitle, setErrorModalTitle] = useState("");
   const [errorModalMessage, setErrorModalMessage] = useState("");
   const {

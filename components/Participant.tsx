@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Box, Center, Flex } from "@chakra-ui/react";
-import { LocalParticipant, RemoteParticipant } from "@mux/spaces-web";
 
 import { useParticipant } from "hooks/useParticipant";
 
@@ -11,16 +10,28 @@ import ParticipantInfoBar from "./ParticipantInfoBar";
 interface Props {
   width?: number;
   height?: number;
-  participant: LocalParticipant | RemoteParticipant;
+  connectionId: string;
 }
 
 export default function Participant({
   width,
   height,
-  participant,
+  connectionId,
 }: Props): JSX.Element {
-  const { isLocal, isMicrophoneMuted, isSpeaking, cameraTrack } =
-    useParticipant(participant);
+  const {
+    id,
+    isLocal,
+    isSpeaking,
+    isMicrophoneMuted,
+    isCameraOff,
+    cameraWidth,
+    cameraHeight,
+    attachCamera,
+  } = useParticipant(connectionId);
+
+  const displayName = useMemo(() => {
+    return id.split("|")[0];
+  }, [id]);
 
   const outlineWidth = 3;
 
@@ -44,18 +55,20 @@ export default function Participant({
       role="group"
     >
       <VideoRenderer
-        connectionId={participant.connectionId}
         local={isLocal}
-        track={cameraTrack}
+        width={cameraWidth}
+        height={cameraHeight}
+        attach={attachCamera}
+        connectionId={connectionId}
       />
 
       <ParticipantInfoBar
+        name={displayName}
         isMuted={isMicrophoneMuted}
-        participant={participant}
         parentHeight={height!}
       />
 
-      {!cameraTrack && (
+      {isCameraOff && (
         <Center
           background="black"
           color="white"
@@ -66,12 +79,12 @@ export default function Participant({
           w="100%"
         >
           <Flex direction="column" textAlign="center">
-            <Box>{participant.id.split("|")[0]}</Box>
+            <Box>{displayName}</Box>
           </Flex>
         </Center>
       )}
 
-      {!isLocal && <Pin connectionId={participant.connectionId} />}
+      {!isLocal && <Pin connectionId={connectionId} />}
     </Box>
   );
 }

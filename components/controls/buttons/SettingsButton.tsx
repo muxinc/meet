@@ -13,7 +13,7 @@ import { useRouter } from "next/router";
 
 import { copyLinkToastConfig, ToastIds } from "shared/toastConfigs";
 
-import { useScreenShare } from "hooks/useScreenShare";
+import { useSpace } from "hooks/useSpace";
 import useWindowDimensions from "hooks/useWindowDimension";
 
 import SettingsIcon from "components/icons/SettingsIcon";
@@ -28,11 +28,10 @@ export default function SettingsButton({
   onLeave,
   onRename,
 }: Props): JSX.Element {
-  const { width } = useWindowDimensions();
-  const { isLocalScreenShare } = useScreenShare();
-
-  const router = useRouter();
   const toast = useToast();
+  const router = useRouter();
+  const { width } = useWindowDimensions();
+  const { isLocalScreenShare } = useSpace();
 
   const {
     isOpen: isRenameModalOpen,
@@ -40,8 +39,8 @@ export default function SettingsButton({
     onClose: onRenameModalClose,
   } = useDisclosure();
 
-  const showCopyInviteLink = (width && width < 930) || false;
-  const showLeaveOption = (width && width < 480) || false;
+  const mediumWindowWidth = (width && width < 930) || false;
+  const smallWindowWidth = (width && width < 480) || false;
 
   const shareLink = () => {
     navigator.clipboard.writeText(
@@ -81,13 +80,13 @@ export default function SettingsButton({
             padding="5px 10px"
             width="200px"
           >
-            {!isLocalScreenShare && (
-              <MenuItem onClick={onRenameModalOpen}>Change Name</MenuItem>
-            )}
-            {showCopyInviteLink && (
+            <MenuItem disabled={isLocalScreenShare} onClick={onRenameModalOpen}>
+              Change Name
+            </MenuItem>
+            {mediumWindowWidth && (
               <MenuItem onClick={shareLink}>Copy Invite Link</MenuItem>
             )}
-            {showLeaveOption && <MenuItem onClick={onLeave}>Leave</MenuItem>}
+            {smallWindowWidth && <MenuItem onClick={onLeave}>Leave</MenuItem>}
           </MenuList>
         </Menu>
       </Box>

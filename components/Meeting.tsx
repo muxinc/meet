@@ -1,29 +1,31 @@
 import React from "react";
-import { Flex } from "@chakra-ui/react";
+import { Center, Flex } from "@chakra-ui/react";
 
-import { useScreenShare } from "hooks/useScreenShare";
-import { useParticipants } from "hooks/useParticipants";
+import { useSpace } from "hooks/useSpace";
 import useWindowDimensions from "hooks/useWindowDimension";
 
 import Gallery from "./Gallery";
-import ScreenShare from "./ScreenShare";
+import Timer from "./Timer";
+import ScreenShareRenderer from "./renderers/ScreenShareRenderer";
 
 const headerHeight = 80;
 
 export default function Meeting(): JSX.Element {
   let gap = 10;
-  const participants = useParticipants();
-  const { screenShareTrack } = useScreenShare();
+  const {
+    participantCount,
+    attachScreenShare,
+    isScreenShareActive,
+    spaceEndsAt,
+  } = useSpace();
   const { width = 0, height = 0 } = useWindowDimensions();
 
   const paddingY = height < 600 ? 10 : 40;
   const paddingX = width < 800 ? 40 : 60;
 
-  const totalParticipants = 1 + participants.length;
-
   let galleryWidth = width - paddingX * 2;
-  if (screenShareTrack) {
-    if (totalParticipants < 6) {
+  if (isScreenShareActive) {
+    if (participantCount < 6) {
       galleryWidth = width * 0.25 - paddingX;
     } else {
       galleryWidth = width * 0.33 - paddingX / 2;
@@ -32,13 +34,13 @@ export default function Meeting(): JSX.Element {
   }
   let galleryHeight = height - headerHeight - paddingY * 2;
 
-  let screenShareWidth = width - galleryWidth;
+  let screenShareWidth = isScreenShareActive ? width - galleryWidth : 0;
 
   let direction: "row" | "column" = "row";
   if (width < height) {
     gap = 8;
     galleryWidth = width - paddingX * 2;
-    if (screenShareTrack) {
+    if (isScreenShareActive) {
       direction = "column";
       screenShareWidth = width;
       galleryHeight = height - headerHeight - (width / 4) * 3;
@@ -59,12 +61,10 @@ export default function Meeting(): JSX.Element {
       justifyContent="center"
       direction={direction}
     >
-      {screenShareTrack && (
-        <ScreenShare
-          screenShareTrack={screenShareTrack}
-          width={screenShareWidth}
-        />
-      )}
+      {spaceEndsAt && <Timer />}
+      <Center width={`${screenShareWidth}px`} maxHeight="100%">
+        <ScreenShareRenderer attach={attachScreenShare} />
+      </Center>
       <Gallery
         gap={gap}
         width={galleryWidth}

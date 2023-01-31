@@ -3,10 +3,9 @@ import { IconButton, Center, Flex } from "@chakra-ui/react";
 
 import { MAX_PARTICIPANTS_PER_PAGE } from "lib/constants";
 
-import UserContext from "context/user";
+import UserContext from "context/User";
 
-import { useParticipants } from "hooks/useParticipants";
-import { useLocalParticipant } from "hooks/useLocalParticipant";
+import { useSpace } from "hooks/useSpace";
 
 import Participant from "./Participant";
 import GalleryLayout from "./GalleryLayout";
@@ -28,29 +27,28 @@ export default function Gallery({
   participantsPerPage = MAX_PARTICIPANTS_PER_PAGE,
 }: Props): JSX.Element {
   const [currentPage, setCurrentPage] = useState(1);
-  const localParticipant = useLocalParticipant();
-  const participants = useParticipants();
+  const { connectionIds, participantCount } = useSpace();
   const { pinnedConnectionId } = React.useContext(UserContext);
 
-  const sortedParticipants = useMemo(() => {
-    return [...participants].sort((a, b) => {
-      if (a.connectionId === pinnedConnectionId) {
+  const sortedConnectionIds = useMemo(() => {
+    return [...connectionIds].sort((a, b) => {
+      if (a === pinnedConnectionId) {
         return -1;
-      } else if (b.connectionId === pinnedConnectionId) {
+      } else if (b === pinnedConnectionId) {
         return 1;
       } else {
         return 0;
       }
     });
-  }, [participants, pinnedConnectionId]);
+  }, [connectionIds, pinnedConnectionId]);
 
   const numberPages = useMemo(() => {
-    if (participants.length >= participantsPerPage) {
-      return Math.ceil((1 + participants.length) / participantsPerPage);
+    if (participantCount >= participantsPerPage) {
+      return Math.ceil(participantCount / participantsPerPage);
     } else {
       return 1;
     }
-  }, [participants, participantsPerPage]);
+  }, [participantCount, participantsPerPage]);
 
   const goToPreviousPage = useCallback(() => {
     if (currentPage > 1) {
@@ -58,31 +56,17 @@ export default function Gallery({
     }
   }, [currentPage]);
 
-  const paginatedParticipants = useMemo(() => {
-    if (localParticipant) {
-      const startIndex =
-        currentPage * participantsPerPage - participantsPerPage;
-      const endIndex = startIndex + participantsPerPage;
-      const pageParticipants = [localParticipant, ...sortedParticipants].slice(
-        startIndex,
-        endIndex
-      );
-      // if there are no participants, then only the local view will show up on the page
-      // we need to go back to the previous page.
-      if (pageParticipants.length === 0) {
-        goToPreviousPage();
-      }
-      return pageParticipants;
-    } else {
-      return [];
+  const paginatedConnectionIds = useMemo(() => {
+    const startIndex = currentPage * participantsPerPage - participantsPerPage;
+    const endIndex = startIndex + participantsPerPage;
+    const pageParticipants = sortedConnectionIds.slice(startIndex, endIndex);
+    // if there are no participants, then only the local view will show up on the page
+    // we need to go back to the previous page.
+    if (pageParticipants.length === 0) {
+      goToPreviousPage();
     }
-  }, [
-    localParticipant,
-    sortedParticipants,
-    currentPage,
-    participantsPerPage,
-    goToPreviousPage,
-  ]);
+    return pageParticipants;
+  }, [sortedConnectionIds, currentPage, participantsPerPage, goToPreviousPage]);
 
   const hidePaginateCtrlRight = currentPage === numberPages;
 
@@ -121,20 +105,17 @@ export default function Gallery({
         />
       </Center>
       <Center width={width} zIndex={100}>
-        {participants?.map((participant) => (
-          <ParticipantAudio
-            key={participant.connectionId}
-            participant={participant}
-          />
+        {connectionIds.map((connectionId) => (
+          <ParticipantAudio key={connectionId} connectionId={connectionId} />
         ))}
         <GalleryLayout
           width={widthBetweenPagination}
           height={height}
           gap={gap - 6}
         >
-          {paginatedParticipants?.map((participant) => {
+          {paginatedConnectionIds.map((connectionId) => {
             return (
-              <Participant key={participant.id} participant={participant} />
+              <Participant key={connectionId} connectionId={connectionId} />
             );
           })}
         </GalleryLayout>
