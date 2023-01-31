@@ -77,14 +77,14 @@ You can start editing the page by modifying `pages/index.tsx`. The page auto-upd
 
 # Learn More
 
-Mux
+## Mux
 
 - [Mux Real-Time Video](https://mux.com/real-time-video)
 - [Real-Time Video in React](https://docs.mux.com/guides/video/send-and-receive-real-time-video-from-a-react-application)
 - [Real-Time Video on Android](https://docs.mux.com/guides/video/send-and-receive-real-time-video-from-an-android-application)
 - [Real-Time Video on iOS](https://docs.mux.com/guides/video/send-and-receive-real-time-video-from-an-ios-application)
 
-Next.js
+## Next.js
 
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
