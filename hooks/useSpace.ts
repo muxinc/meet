@@ -1,27 +1,84 @@
-import { LocalParticipant, Space } from "@mux/spaces-web";
 import { useContext } from "react";
+import { AcrScore, SpaceEvent } from "@mux/spaces-web";
 
-import { MuxContext } from "./MuxContext";
+import SpaceContext from "../context/Space";
 
-/**
- * Returns an instance of space passed to or created by closest <SpaceProvider>.
- */
-export const useSpace = (): {
-  space: Space | null;
-  joinSpace: (jwt: string) => Promise<LocalParticipant | undefined>;
-  leaveSpace: () => void;
+interface Space {
+  joinSpace: (jwt: string, endsAt?: number) => Promise<void>;
   joinError: string | null;
   isJoined: boolean;
+
+  connectionIds: string[];
   isBroadcasting: boolean;
-} => {
-  const mux = useContext(MuxContext);
+  participantCount: number;
+  onSpaceEvent: (event: SpaceEvent, callback: (...args: any) => void) => void;
+  publishCamera: (deviceId: string) => void;
+  publishMicrophone: (deviceId: string) => void;
+  unPublishDevice: (deviceId: string) => void;
+
+  isScreenShareActive: boolean;
+  isLocalScreenShare: boolean;
+  screenShareError: string | null;
+  attachScreenShare: (element: HTMLVideoElement) => void;
+  startScreenShare: () => void;
+  stopScreenShare: () => void;
+  screenShareParticipantId?: string;
+
+  spaceEndsAt: number | null;
+  leaveSpace: () => void;
+  submitAcrScore: (score: AcrScore) => Promise<void> | undefined;
+}
+
+export const useSpace = (): Space => {
+  const {
+    joinSpace,
+    joinError,
+    isJoined,
+
+    connectionIds,
+    isBroadcasting,
+    participantCount,
+    onSpaceEvent,
+    publishCamera,
+    publishMicrophone,
+    unPublishDevice,
+
+    isScreenShareActive,
+    isLocalScreenShare,
+    screenShareError,
+    attachScreenShare,
+    startScreenShare,
+    stopScreenShare,
+    screenShareParticipantId,
+
+    spaceEndsAt,
+    leaveSpace,
+    submitAcrScore,
+  } = useContext(SpaceContext);
 
   return {
-    space: mux.space ?? null,
-    joinSpace: mux.joinSpace,
-    leaveSpace: mux.leaveSpace,
-    joinError: mux.joinError ?? null,
-    isJoined: mux.isJoined,
-    isBroadcasting: mux.isBroadcasting,
+    joinSpace,
+    joinError,
+    isJoined,
+
+    connectionIds,
+    isBroadcasting,
+    participantCount,
+    onSpaceEvent,
+    publishCamera,
+    publishMicrophone,
+    unPublishDevice,
+
+    isScreenShareActive,
+    isLocalScreenShare,
+    screenShareError,
+    attachScreenShare,
+    startScreenShare,
+    stopScreenShare,
+    screenShareParticipantId,
+
+    spaceEndsAt,
+    leaveSpace,
+    submitAcrScore,
   };
 };

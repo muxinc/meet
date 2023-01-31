@@ -1,19 +1,22 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Track } from "@mux/spaces-web";
 
 import poster from "../../public/poster.jpg";
 import posterFlipped from "../../public/poster-flipped.jpg";
 
 interface Props {
+  width: number;
+  height: number;
   local: boolean;
-  track?: Track;
   connectionId: string;
+  attach: (element: HTMLVideoElement) => void;
 }
 
 export default function VideoRenderer({
+  width,
+  height,
   local,
-  track,
   connectionId,
+  attach,
 }: Props): JSX.Element {
   const videoEl = useRef<HTMLVideoElement | null>(null);
   const [disableFlip, setDisableFlip] = useState(false);
@@ -30,18 +33,15 @@ export default function VideoRenderer({
     const el = videoEl.current;
     if (!el) return;
 
-    track?.attach(el);
+    attach(el);
 
     el.addEventListener("enterpictureinpicture", handleEnterPiP);
     el.addEventListener("leavepictureinpicture", handleLeavePiP);
-
     return () => {
-      track?.detach(el);
-
       el.removeEventListener("enterpictureinpicture", handleEnterPiP);
       el.removeEventListener("leavepictureinpicture", handleLeavePiP);
     };
-  }, [track]);
+  }, [attach]);
 
   return (
     <video
@@ -53,7 +53,7 @@ export default function VideoRenderer({
       style={{
         width: "100%",
         height: "100%",
-        objectFit: track && track?.height > track?.width ? "contain" : "cover",
+        objectFit: height > width ? "contain" : "cover",
         transform: !disableFlip && local ? "scaleX(-1)" : "",
       }}
     />

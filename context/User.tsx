@@ -1,11 +1,9 @@
-import React, { ReactNode, useCallback, useState } from "react";
+import React, { createContext, ReactNode, useCallback, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 import { useLocalStorage } from "../hooks/useLocalStorage";
 
-interface IUserContext {
-  spaceId: string;
-  setSpaceId?: (id: string) => void;
+interface UserState {
   participantId: string;
   participantName: string;
   setParticipantName: (newName: string) => string;
@@ -23,26 +21,7 @@ interface IUserContext {
   setPinnedConnectionId: (newConnectionId: string) => void;
 }
 
-const defaultState = {
-  spaceId: "",
-  participantId: "",
-  participantName: "",
-  setParticipantName: () => "",
-  interactionRequired: true,
-  setInteractionRequired: () => {},
-  microphoneMuted: false,
-  setMicrophoneMuted: () => {},
-  cameraOff: false,
-  setCameraOff: () => {},
-  microphoneDeviceId: "",
-  setMicrophoneDeviceId: () => {},
-  cameraDeviceId: "",
-  setCameraDeviceId: () => {},
-  pinnedConnectionId: "",
-  setPinnedConnectionId: () => {},
-};
-
-const UserContext = React.createContext<IUserContext>(defaultState);
+const UserContext = createContext({} as UserState);
 
 export default UserContext;
 
@@ -56,7 +35,6 @@ interface Props {
 
 export const UserProvider = ({ children }: Props) => {
   const [interactionRequired, setInteractionRequired] = useState(true);
-  const [spaceId, setSpaceId] = useLocalStorage("spaceId", "");
   const [participantName, setParticipantName] = useLocalStorage(
     "participantName",
     ""
@@ -90,8 +68,6 @@ export const UserProvider = ({ children }: Props) => {
   return (
     <UserContext.Provider
       value={{
-        spaceId,
-        setSpaceId,
         participantId,
         participantName,
         setParticipantName: handleSetParticipantName,

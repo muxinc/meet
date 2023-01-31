@@ -2,7 +2,7 @@ import React from "react";
 import { IconButton } from "@chakra-ui/react";
 import { MdPushPin, MdOutlinePushPin } from "react-icons/md";
 
-import UserContext from "context/user";
+import UserContext from "context/User";
 
 interface Props {
   connectionId: string;

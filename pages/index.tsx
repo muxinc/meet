@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import {
@@ -7,80 +7,68 @@ import {
   FormControl,
   FormLabel,
   Stack,
-  Select,
   Heading,
   Input,
   FormHelperText,
   Flex,
   Center,
   HStack,
+  useDisclosure,
 } from "@chakra-ui/react";
-import { useQuery } from "react-query";
+import { useMutation } from "react-query";
 
-import UserContext from "context/user";
-import { useDevices } from "hooks/useDevices";
+import UserContext from "context/User";
+import { useUserMedia } from "hooks/useUserMedia";
 
 import Header from "components/Header";
 import SpaceMan from "components/SpaceMan";
 import MicrophoneButton from "components/controls/buttons/MicrophoneButton";
 import CameraButton from "components/controls/buttons/CameraButton";
+import ErrorModal from "components/modals/ErrorModal";
 
 const Home = () => {
   const router = useRouter();
-  const { isReady: isRouterReady } = router;
-  const { spaceId: spaceIdQuery } = router.query;
+  const didPopulateDevicesRef = useRef(false);
   const user = React.useContext(UserContext);
-  const [loading, setLoading] = useState(true);
-  const [spaceId, setSpaceId] = useState("");
-  const [participantName, setParticipantName] = useState(user.participantName);
+  const [participantName, setParticipantName] = useState("");
   const [joining, setJoining] = useState(false);
-  const { requestPermissionAndPopulateDevices } = useDevices();
+  const [hasBlurredNameInput, setHasBlurredNameInput] = useState(false);
+  const { requestPermissionAndPopulateDevices } = useUserMedia();
+  const [errorModalTitle, setErrorModalTitle] = useState("");
+  const [errorModalMessage, setErrorModalMessage] = useState("");
+  const {
+    isOpen: isErrorModalOpen,
+    onOpen: onErrorModalOpen,
+    onClose: onErrorModalClose,
+  } = useDisclosure();
 
-  const { data: spaces } = useQuery(["Spaces"], () =>
-    fetch(`/api/spaces`)
-      .then((res) => res.json())
-      .then((spaceList: { passthrough: string; id: string }[]) => {
-        return spaceList.filter((space) => {
-          const label = space.passthrough ?? space.id;
-          return !label.startsWith("slack");
-        });
-      })
-  );
-
-  const invalidSpaceId = useCallback(
-    (spaceIdToCheck: string) => {
-      let idValid = spaceIdToCheck && spaceIdToCheck !== "";
-      let idCurrent = spaces?.some(
-        (space: { id: string; passthrough: string }) =>
-          space.id === spaceIdToCheck
-      );
-      return !idValid || !idCurrent;
-    },
-    [spaces]
+  const createSpaceMutation = useMutation(["Spaces"], () =>
+    fetch(`/api/spaces`, {
+      method: "POST",
+      mode: "no-cors",
+    }).then((res) => {
+      if (res.ok) {
+        return res.json();
+      } else if (res.status === 401) {
+        throw new Error("Not authorized to create space");
+      } else if (res.status === 419) {
+        throw new Error("Maximum active space limit reached");
+      } else {
+        throw new Error("Error creating space");
+      }
+    })
   );
 
   useEffect(() => {
-    if (!isRouterReady) return;
-
-    if (typeof spaceIdQuery === "string" && !invalidSpaceId(spaceIdQuery)) {
-      setSpaceId(spaceIdQuery);
-    } else if (!invalidSpaceId(user.spaceId)) {
-      setSpaceId(user.spaceId);
-    } else if (spaces && spaces.length > 0) {
-      setSpaceId(spaces[0].id);
+    if (didPopulateDevicesRef.current === false) {
+      didPopulateDevicesRef.current = true;
+      requestPermissionAndPopulateDevices();
     }
+  }, [requestPermissionAndPopulateDevices]);
 
-    requestPermissionAndPopulateDevices();
-    setLoading(false);
-  }, [
-    spaces,
-    spaceIdQuery,
-    user.spaceId,
-    isRouterReady,
-    invalidSpaceId,
-    user.participantName,
-    requestPermissionAndPopulateDevices,
-  ]);
+  useEffect(() => {
+    setParticipantName(user.participantName);
+  }, [user.participantName]);
 
   const invalidParticipantName = useMemo(
     () => !participantName,
@@ -88,13 +76,14 @@ const Home = () => {
   );
 
   const disableJoin = useMemo(
-    () => invalidParticipantName || invalidSpaceId(spaceId),
-    [spaceId, invalidParticipantName, invalidSpaceId]
+    () => invalidParticipantName,
+    [invalidParticipantName]
   );
 
-  const handleSpaceIdChange = (event: { target: { value: string } }) => {
-    setSpaceId(event.target.value);
-  };
+  const isNameInputInvalid = useMemo(
+    () => invalidParticipantName && hasBlurredNameInput,
+    [invalidParticipantName, hasBlurredNameInput]
+  );
 
   const handleParticipantNameChange = (event: {
     target: { value: string };
@@ -102,16 +91,39 @@ const Home = () => {
     setParticipantName(event.target.value);
   };
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setJoining(true);
-
-    user.setSpaceId!(spaceId);
     user.setParticipantName!(participantName);
     user.setInteractionRequired(false);
 
-    router.push({
-      pathname: `/space/${spaceId}`,
+    createSpaceMutation.mutate(undefined, {
+      onError: (error) => {
+        const message = (error as Error).message;
+
+        if (message.includes("Not authorized")) {
+          setErrorModalTitle("Not authorized to create a new space");
+          setErrorModalMessage(
+            "Make sure MUX_TOKEN_ID and MUX_TOKEN_SECRET are set. Refer to the README in https://github.com/muxinc/meet for more details."
+          );
+          onErrorModalOpen();
+        } else if (message.includes("space limit reached")) {
+          setErrorModalTitle("Maximum active space limit reached");
+          setErrorModalMessage(
+            "There are too many active spaces being used. Please try again later."
+          );
+          onErrorModalOpen();
+        }
+
+        setJoining(false);
+      },
+      onSuccess: (newSpace) => {
+        if (newSpace) {
+          router.push({
+            pathname: `/space/${newSpace.id}`,
+          });
+        }
+      },
     });
   }
 
@@ -132,7 +144,10 @@ const Home = () => {
                 <Stack spacing="4">
                   <Heading>Join a Space</Heading>
 
-                  <FormControl isInvalid={!loading && invalidParticipantName}>
+                  <FormControl
+                    isInvalid={isNameInputInvalid}
+                    onBlur={() => setHasBlurredNameInput(true)}
+                  >
                     <FormLabel>Your Name</FormLabel>
                     <Input
                       maxLength={40}
@@ -141,32 +156,10 @@ const Home = () => {
                       onChange={handleParticipantNameChange}
                     />
                     <FormHelperText
-                      color={
-                        loading || !invalidParticipantName ? "white" : "#E22C3E"
-                      }
+                      color={!isNameInputInvalid ? "white" : "#E22C3E"}
                     >
                       This cannot be empty.
                     </FormHelperText>
-                  </FormControl>
-
-                  <FormControl>
-                    <FormLabel>Space</FormLabel>
-                    <Select
-                      onChange={handleSpaceIdChange}
-                      value={spaceId}
-                      disabled={!spaces}
-                    >
-                      {!spaces && <option>Loading...</option>}
-                      {spaces &&
-                        spaces.map((space: any) => {
-                          const label = space.passthrough ?? space.id;
-                          return (
-                            <option key={space.id} value={space.id}>
-                              {label}
-                            </option>
-                          );
-                        })}
-                    </Select>
                   </FormControl>
 
                   <Button
@@ -175,7 +168,7 @@ const Home = () => {
                     isDisabled={disableJoin}
                     isLoading={joining}
                   >
-                    Join
+                    Join a New Space
                   </Button>
                 </Stack>
               </form>
@@ -188,6 +181,13 @@ const Home = () => {
         </Center>
         <SpaceMan />
       </Flex>
+
+      <ErrorModal
+        title={errorModalTitle}
+        message={errorModalMessage}
+        isOpen={isErrorModalOpen}
+        onClose={onErrorModalClose}
+      />
     </>
   );
 };

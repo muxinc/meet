@@ -14,9 +14,9 @@ import {
 import { useHotkeys } from "react-hotkeys-hook";
 import { AiOutlineCheck } from "react-icons/ai";
 
-import UserContext from "context/user";
-import { useDevices } from "hooks/useDevices";
-import { useLocalParticipant } from "hooks/useLocalParticipant";
+import UserContext from "context/User";
+import { useSpace } from "hooks/useSpace";
+import { useUserMedia } from "hooks/useUserMedia";
 
 import ChevronIcon from "components/icons/ChevronIcon";
 import MuteCameraIcon from "components/icons/MuteCameraIcon";
@@ -25,56 +25,51 @@ import UnmuteCameraIcon from "components/icons/UnmuteCameraIcon";
 export default function CameraButton(): JSX.Element {
   const { cameraOff, setCameraOff, cameraDeviceId, setCameraDeviceId } =
     React.useContext(UserContext);
-  const { cameraDevices, getCameraDevice, activeCamera } = useDevices();
-  const localParticipant = useLocalParticipant();
+  const { isJoined, publishCamera, unPublishDevice } = useSpace();
+  const { cameraDevices, stopActiveCamera } = useUserMedia();
 
   const selectCameraDevice = useCallback(
     async (deviceId: string) => {
       setCameraDeviceId(deviceId);
 
-      if (!cameraOff) {
-        const tracks = await getCameraDevice(deviceId);
-        localParticipant?.updateTracks(tracks);
+      if (isJoined && !cameraOff) {
+        publishCamera(deviceId);
       }
     },
-    [setCameraDeviceId, localParticipant, cameraOff, getCameraDevice]
+    [isJoined, setCameraDeviceId, cameraOff, publishCamera]
   );
 
   const toggleCamera = useCallback(async () => {
     if (cameraOff) {
       setCameraOff(false);
-      const tracks = await getCameraDevice(cameraDeviceId);
-      localParticipant?.publishTracks(tracks);
+      if (isJoined) {
+        publishCamera(cameraDeviceId);
+      }
     } else {
       setCameraOff(true);
-      if (activeCamera) {
-        localParticipant?.unpublishTracks([activeCamera]);
+      stopActiveCamera();
+      if (isJoined) {
+        unPublishDevice(cameraDeviceId);
       }
     }
   }, [
-    localParticipant,
-    activeCamera,
+    isJoined,
     cameraOff,
     setCameraOff,
     cameraDeviceId,
-    getCameraDevice,
+    stopActiveCamera,
+    publishCamera,
+    unPublishDevice,
   ]);
 
   const hotkeyText = "⌘ + e"; // adding this here to make it easy to change later. appears in tooltip on button.
   useHotkeys(
-    "cmd+e,ctrl+e",
-    (e) => {
-      e.preventDefault();
+    "meta+e",
+    () => {
       toggleCamera();
     },
-    [
-      localParticipant,
-      activeCamera,
-      cameraOff,
-      setCameraOff,
-      cameraDeviceId,
-      getCameraDevice,
-    ]
+    { preventDefault: true },
+    [toggleCamera]
   );
 
   const ariaLabel = cameraOff ? "Unhide" : "Hide";

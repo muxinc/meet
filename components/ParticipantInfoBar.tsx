@@ -1,18 +1,17 @@
 import React from "react";
 import { Flex, Text } from "@chakra-ui/react";
-import { LocalParticipant, RemoteParticipant } from "@mux/spaces-web";
 
 import MuteIndicator from "./MuteIndicator";
 
 interface Props {
-  participant: LocalParticipant | RemoteParticipant;
+  name: string;
   isMuted: boolean;
   parentHeight: number;
 }
 
 export default function ParticipantInfoBar({
+  name,
   isMuted,
-  participant,
   parentHeight,
 }: Props): JSX.Element {
   let height = "40px";
@@ -47,7 +46,7 @@ export default function ParticipantInfoBar({
     >
       <MuteIndicator parentHeight={parentHeight} isMuted={isMuted} />
       <Text fontSize={fontSize} fontWeight="700">
-        {participant.id.split("|")[0]}
+        {name}
       </Text>
     </Flex>
   );

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useMutation } from "react-query";
 import Head from "next/head";
 import Image from "next/image";
@@ -6,11 +6,10 @@ import { useRouter } from "next/router";
 import type { NextPage, GetServerSideProps } from "next";
 import { Flex } from "@chakra-ui/react";
 import styled from "@emotion/styled";
-import { TrackSource } from "@mux/spaces-web";
+import moment from "moment";
 
-import UserContext from "context/user";
+import UserContext from "context/User";
 import { useSpace } from "hooks/useSpace";
-import { useDevices } from "hooks/useDevices";
 import { tokenPOST } from "client/token";
 import { fetchSpace } from "pages/api/spaces/[id]";
 
@@ -18,6 +17,7 @@ import Stage from "components/Stage";
 import UserInteractionPrompt from "components/UserInteractionPrompt";
 
 import starfield from "../../public/starfield-bg.jpg";
+import { TEMPORARY_SPACE_PASSTHROUGH } from "lib/constants";
 
 const BackgroundImageWrap = styled.div`
   position: fixed;
@@ -28,44 +28,41 @@ const BackgroundImageWrap = styled.div`
 `;
 
 interface Props {
+  heliosURL: string;
+  spaceBackendURL: string;
   title: string;
+  endsAt?: number;
 }
 
-const SpacePage: NextPage<Props> = ({ title }: Props) => {
+const SpacePage: NextPage<Props> = ({
+  heliosURL,
+  spaceBackendURL,
+  title,
+  endsAt,
+}: Props) => {
   const router = useRouter();
   const { id } = router.query;
   const { isReady: isRouterReady } = router;
-  const { joinSpace, leaveSpace } = useSpace();
-  const { requestPermissionAndGetLocalMedia } = useDevices();
   const user = React.useContext(UserContext);
+  const { joinSpace, leaveSpace } = useSpace();
+  const [canJoinSpace, setCanJoinSpace] = useState(true);
+
+  useEffect(() => {
+    setCanJoinSpace((endsAt && moment(endsAt).diff(moment()) > 0) || !endsAt);
+  }, [endsAt]);
+
+  useEffect(() => {
+    if (spaceBackendURL) {
+      (window as any).MUX_SPACES_BACKEND_URL = spaceBackendURL;
+    }
+    if (heliosURL) {
+      (window as any).MUX_SPACES_HELIOS_URL = heliosURL;
+    }
+  }, [spaceBackendURL, heliosURL]);
 
   const mutation = useMutation(tokenPOST, {
     onSuccess: async (data) => {
-      const localTracks = await requestPermissionAndGetLocalMedia(
-        user.microphoneDeviceId,
-        user.cameraOff ? undefined : user.cameraDeviceId
-      );
-      localTracks.forEach((localTrack) => {
-        switch (localTrack.source) {
-          case TrackSource.Camera:
-            user.setCameraDeviceId(localTrack.deviceId ?? "");
-            break;
-          case TrackSource.Microphone:
-            user.setMicrophoneDeviceId(localTrack.deviceId ?? "");
-        }
-      });
-      const localParticipant = await joinSpace(data.spaceJWT);
-      if (localParticipant) {
-        const publishedTracks = await localParticipant.publishTracks(
-          localTracks
-        );
-
-        if (user.microphoneMuted) {
-          publishedTracks
-            .filter((track) => track.source === TrackSource.Microphone)
-            .forEach((track) => track.mute());
-        }
-      }
+      await joinSpace(data.spaceJWT, endsAt);
     },
   });
 
@@ -80,19 +77,19 @@ const SpacePage: NextPage<Props> = ({ title }: Props) => {
   );
 
   const handleJoin = useCallback(() => {
-    if (typeof id === "string") {
+    if (typeof id === "string" && canJoinSpace) {
       authenticate(id, user.participantId);
     }
-  }, [id, authenticate, user.participantId]);
+  }, [id, canJoinSpace, authenticate, user.participantId]);
 
   const rejoinAs = useCallback(
     (participantId: string) => {
-      if (typeof id === "string") {
+      if (typeof id === "string" && canJoinSpace) {
         leaveSpace();
         authenticate(id, participantId);
       }
     },
-    [id, leaveSpace, authenticate]
+    [id, canJoinSpace, leaveSpace, authenticate]
   );
 
   useEffect(() => {
@@ -102,7 +99,7 @@ const SpacePage: NextPage<Props> = ({ title }: Props) => {
       return;
     }
     if (!user.participantName) {
-      router.replace({ pathname: "/", query: { spaceId: id } });
+      router.replace({ pathname: "/" });
       return;
     }
     router.events.on("routeChangeStart", leaveSpace);
@@ -111,7 +108,15 @@ const SpacePage: NextPage<Props> = ({ title }: Props) => {
       router.events.off("routeChangeStart", leaveSpace);
       router.events.off("routeChangeComplete", handleJoin);
     };
-  }, [id, router, handleJoin, leaveSpace, isRouterReady, user.participantName]);
+  }, [
+    id,
+    user,
+    router,
+    handleJoin,
+    leaveSpace,
+    isRouterReady,
+    user.participantName,
+  ]);
 
   return (
     <>
@@ -147,20 +152,36 @@ const SpacePage: NextPage<Props> = ({ title }: Props) => {
   );
 };
 
+const { MUX_SPACES_BACKEND_URL = "", MUX_SPACES_HELIOS_URL = "" } = process.env;
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { id } = context.query;
   let passthrough;
+  let createdAt;
 
   try {
     if (typeof id === "string") {
-      ({ passthrough } = await fetchSpace(id));
+      ({ passthrough, created_at: createdAt } = await fetchSpace(id));
     }
   } catch (error) {}
 
+  let props: Record<string, any> = {
+    heliosURL: MUX_SPACES_HELIOS_URL,
+    spaceBackendURL: MUX_SPACES_BACKEND_URL,
+    title: passthrough ? `${passthrough} | Mux Meet` : "Mux Meet Space",
+  };
+
+  if (
+    process.env.SPACE_DURATION_SECONDS &&
+    passthrough === TEMPORARY_SPACE_PASSTHROUGH &&
+    createdAt
+  ) {
+    props.endsAt = moment(createdAt * 1000)
+      .add(process.env.SPACE_DURATION_SECONDS, "seconds")
+      .valueOf();
+  }
+
   return {
-    props: {
-      title: passthrough ? `${passthrough} | Mux Meet` : "Mux Meet Space",
-    },
+    props,
   };
 };
 

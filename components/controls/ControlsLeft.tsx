@@ -11,7 +11,13 @@ export default function ControlsLeft(): JSX.Element {
       display={{ base: "none", md: "flex" }}
       width="290px"
     >
-      <Image priority alt="logo" width={150} height={35} src={muxLogo} />
+      <a
+        href="https://www.mux.com/real-time-video"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <Image priority alt="logo" width={150} height={35} src={muxLogo} />
+      </a>
     </Flex>
   );
 }

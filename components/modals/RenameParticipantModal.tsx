@@ -14,7 +14,7 @@ import {
   Input,
 } from "@chakra-ui/react";
 
-import UserContext from "context/user";
+import UserContext from "context/User";
 
 type Props = Pick<ReturnType<typeof useDisclosure>, "isOpen" | "onClose"> & {
   onRename: (newName: string) => void;
@@ -25,8 +25,8 @@ export default function RenameParticipantModal({
   isOpen,
   onClose,
 }: Props): JSX.Element {
-  const nameInputRef = useRef<HTMLInputElement>(null);
   const user = React.useContext(UserContext);
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [participantName, setParticipantName] = useState(user.participantName);
 
   const invalidParticipantName = useMemo(

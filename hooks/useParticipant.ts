@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   LocalParticipant,
   ParticipantEvent,
@@ -7,22 +7,73 @@ import {
   TrackSource,
 } from "@mux/spaces-web";
 
-export interface ParticipantState {
+import SpaceContext from "../context/Space";
+
+export interface Participant {
+  id: string;
   isLocal: boolean;
   isSpeaking: boolean;
-  cameraTrack?: Track;
-  microphoneTrack?: Track;
   isMicrophoneMuted: boolean;
+  isCameraOff: boolean;
+  cameraWidth: number;
+  cameraHeight: number;
+  attachCamera: (element: HTMLVideoElement) => void;
+  attachMicrophone: (element: HTMLAudioElement) => void;
 }
 
-export function useParticipant(
-  participant: LocalParticipant | RemoteParticipant
-): ParticipantState {
-  const isLocal = participant instanceof LocalParticipant;
+export function useParticipant(connectionId: string): Participant {
+  const { localParticipant, remoteParticipants } = useContext(SpaceContext);
+  let participant: LocalParticipant | RemoteParticipant | undefined =
+    remoteParticipants.find((p) => p.connectionId === connectionId);
+  if (
+    !participant &&
+    localParticipant &&
+    localParticipant.connectionId === connectionId
+  ) {
+    participant = localParticipant;
+  }
+
+  if (typeof participant === "undefined") {
+    throw new Error(`No participant found with connectionId: ${connectionId}`);
+  }
+
+  const id = useMemo(() => (participant ? participant.id : ""), [participant]);
+  const isLocal = useMemo(
+    () => participant instanceof LocalParticipant,
+    [participant]
+  );
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [cameraTrack, setCameraTrack] = useState<Track>();
   const [microphoneTrack, setMicrophoneTrack] = useState<Track>();
   const [isMicrophoneMuted, setMicrophoneMuted] = useState(false);
+
+  const isCameraOff = useMemo(() => {
+    return !!!cameraTrack;
+  }, [cameraTrack]);
+
+  const cameraDimensions = useMemo(() => {
+    return { width: cameraTrack?.width || 0, height: cameraTrack?.height || 0 };
+  }, [cameraTrack]);
+
+  const attachCamera = useCallback(
+    (element: HTMLVideoElement) => {
+      cameraTrack?.attachedElements.forEach((attachedEl) =>
+        cameraTrack.detach(attachedEl)
+      );
+      cameraTrack?.attach(element);
+    },
+    [cameraTrack]
+  );
+
+  const attachMicrophone = useCallback(
+    (element: HTMLAudioElement) => {
+      microphoneTrack?.attachedElements.forEach((attachedEl) =>
+        microphoneTrack.detach(attachedEl)
+      );
+      microphoneTrack?.attach(element);
+    },
+    [microphoneTrack]
+  );
 
   const handleTrackAdded = useCallback(
     (track: Track) => {
@@ -54,6 +105,8 @@ export function useParticipant(
   );
 
   useEffect(() => {
+    if (!participant) return;
+
     const onMuted = (track: Track) => {
       if (track.source == TrackSource.Microphone) {
         setMicrophoneMuted(true);
@@ -88,6 +141,8 @@ export function useParticipant(
     });
 
     return () => {
+      if (!participant) return;
+
       participant.off(ParticipantEvent.TrackMuted, onMuted);
       participant.off(ParticipantEvent.TrackUnmuted, onUnmuted);
       participant.off(ParticipantEvent.StartedSpeaking, onSpeaking);
@@ -100,10 +155,14 @@ export function useParticipant(
   }, [participant, handleTrackAdded, handleTrackRemoved]);
 
   return {
+    id,
     isLocal,
     isSpeaking,
-    cameraTrack,
-    microphoneTrack,
+    isCameraOff,
     isMicrophoneMuted,
+    cameraWidth: cameraDimensions.width,
+    cameraHeight: cameraDimensions.height,
+    attachCamera,
+    attachMicrophone,
   };
 }

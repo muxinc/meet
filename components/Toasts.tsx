@@ -2,17 +2,9 @@ import styled from "@emotion/styled";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef } from "react";
 import { Box, ToastId, useToast } from "@chakra-ui/react";
-import {
-  RemoteParticipant,
-  RemoteTrack,
-  SpaceEvent,
-  LocalParticipant,
-  LocalTrack,
-  TrackSource,
-} from "@mux/spaces-web";
+import { RemoteParticipant, SpaceEvent } from "@mux/spaces-web";
 
 import { useSpace } from "hooks/useSpace";
-import { useLocalParticipant } from "hooks/useLocalParticipant";
 
 import {
   broadcastingToastConfig,
@@ -35,55 +27,59 @@ const ToastBox = styled(Box)`
 export default function Toasts(): JSX.Element {
   const toast = useToast();
   const router = useRouter();
-  const { space } = useSpace();
   const { isReady: isRouterReady } = router;
-  const localParticipant = useLocalParticipant();
+  const {
+    onSpaceEvent,
+    isBroadcasting,
+    isScreenShareActive,
+    stopScreenShare,
+    isLocalScreenShare,
+    screenShareParticipantId,
+  } = useSpace();
   const screenshareToastRef = useRef<ToastId>();
   const broadcastingToastRef = useRef<ToastId>();
   const participantEventToastIdRefs = useRef<Array<ToastId>>([]);
 
-  const showLocalScreenshareToast = useCallback(
-    (screenshareTrack: LocalTrack) => {
-      if (!toast.isActive(ToastIds.SHARING_SCREEN_TOAST_ID)) {
-        screenshareToastRef.current = toast({
-          ...sharingScreenToastConfig,
-          render: ({ onClose }) => {
-            return (
-              <ToastBox>
-                You are sharing your screen.
-                <Box
-                  as="button"
-                  color="#DF2868"
-                  onClick={() => {
-                    localParticipant?.unpublishTracks([screenshareTrack]);
-                    onClose();
-                  }}
-                  paddingLeft="10px"
-                >
-                  Stop Sharing
-                </Box>
-              </ToastBox>
-            );
-          },
-        });
-      }
-    },
-    [toast, localParticipant]
-  );
+  const showLocalScreenshareToast = useCallback(() => {
+    if (!toast.isActive(ToastIds.SHARING_SCREEN_TOAST_ID)) {
+      screenshareToastRef.current = toast({
+        ...sharingScreenToastConfig,
+        render: ({ onClose }) => {
+          return (
+            <ToastBox>
+              You are sharing your screen.
+              <Box
+                as="button"
+                color="#DF2868"
+                onClick={() => {
+                  stopScreenShare();
+                  onClose();
+                }}
+                paddingLeft="10px"
+              >
+                Stop Sharing
+              </Box>
+            </ToastBox>
+          );
+        },
+      });
+    }
+  }, [toast, stopScreenShare]);
 
-  const showRemoteScreenshareToast = useCallback(
-    (participantName: string) => {
-      if (!toast.isActive(ToastIds.VIEWING_SHARED_SCREEN_TOAST_ID)) {
-        screenshareToastRef.current = toast({
-          ...viewingSharedScreenToastConfig,
-          render: () => (
-            <ToastBox>{participantName} is sharing their screen.</ToastBox>
-          ),
-        });
-      }
-    },
-    [toast]
-  );
+  const showRemoteScreenshareToast = useCallback(() => {
+    if (
+      !toast.isActive(ToastIds.VIEWING_SHARED_SCREEN_TOAST_ID) &&
+      screenShareParticipantId
+    ) {
+      const participantName = screenShareParticipantId.split("|")[0];
+      screenshareToastRef.current = toast({
+        ...viewingSharedScreenToastConfig,
+        render: () => (
+          <ToastBox>{participantName} is sharing their screen.</ToastBox>
+        ),
+      });
+    }
+  }, [toast, screenShareParticipantId]);
 
   const hideScreenshareToast = useCallback(() => {
     if (screenshareToastRef.current) {
@@ -108,8 +104,23 @@ export default function Toasts(): JSX.Element {
     }
   }, [toast]);
 
+  const pruneParticipantEventRefs = useCallback(() => {
+    // Don't show more than 10 participant event toasts on screen at a time, close the oldest if necessary
+    while (participantEventToastIdRefs.current.length > 9) {
+      let oldest = participantEventToastIdRefs.current.shift();
+      if (oldest) {
+        toast.close(oldest);
+      }
+    }
+
+    // Prune ids of toasts that have already closed on their own
+    participantEventToastIdRefs.current =
+      participantEventToastIdRefs.current.filter((ref) => toast.isActive(ref));
+  }, [participantEventToastIdRefs, toast]);
+
   const showParticipantEventToast = useCallback(
     (eventDescription: string) => {
+      pruneParticipantEventRefs();
       participantEventToastIdRefs.current.push(
         toast({
           ...participantEventToastConfig,
@@ -117,146 +128,77 @@ export default function Toasts(): JSX.Element {
         })
       );
     },
-    [toast]
+    [toast, pruneParticipantEventRefs]
   );
 
   useEffect(() => {
-    if (!space) return;
-
-    const handleBroadcastStateChange = (isBroadcasting: boolean) => {
-      if (isBroadcasting) {
-        showBroadcastToast();
+    if (isScreenShareActive) {
+      if (isLocalScreenShare) {
+        showLocalScreenshareToast();
       } else {
-        hideBroadcastToast();
+        showRemoteScreenshareToast();
       }
-    };
-
-    const handleParticipantJoined = (participant: RemoteParticipant) => {
-      let participantName = participant.id.split("|")[0];
-      showParticipantEventToast(`${participantName} joined the space`);
-    };
-
-    const handleParticipantLeft = (participant: RemoteParticipant) => {
-      let participantName = participant.id.split("|")[0];
-      showParticipantEventToast(`${participantName} left the space`);
-    };
-
-    const handleParticipantTrackPublished = (
-      participant: LocalParticipant | RemoteParticipant,
-      track: LocalTrack | RemoteTrack
-    ) => {
-      if (track.source === TrackSource.Screenshare) {
-        if (
-          participant instanceof LocalParticipant &&
-          track instanceof LocalTrack
-        ) {
-          showLocalScreenshareToast(track);
-        } else {
-          let participantName = participant.id.split("|")[0];
-          showRemoteScreenshareToast(participantName);
-        }
-      }
-    };
-
-    const handleParticipantTrackUnpublished = (
-      _participant: LocalParticipant | RemoteParticipant,
-      track: LocalTrack | RemoteTrack
-    ) => {
-      if (track.source === TrackSource.Screenshare) {
-        hideScreenshareToast();
-      }
-    };
-
-    const handleParticipantTrackSubscribed = (
-      participant: RemoteParticipant,
-      track: RemoteTrack
-    ) => {
-      if (track.source === TrackSource.Screenshare) {
-        if (participant instanceof RemoteParticipant) {
-          let participantName = participant.id.split("|")[0];
-          showRemoteScreenshareToast(participantName);
-        }
-      }
-    };
-
-    const handleParticipantTrackUnsubscribed = (
-      _participant: RemoteParticipant,
-      track: RemoteTrack
-    ) => {
-      if (track.source === TrackSource.Screenshare) {
-        hideScreenshareToast();
-      }
-    };
-
-    space.on(SpaceEvent.BroadcastStateChanged, handleBroadcastStateChange);
-    space.on(SpaceEvent.ParticipantJoined, handleParticipantJoined);
-    space.on(SpaceEvent.ParticipantLeft, handleParticipantLeft);
-
-    space.on(
-      SpaceEvent.ParticipantTrackPublished,
-      handleParticipantTrackPublished
-    );
-    space.on(
-      SpaceEvent.ParticipantTrackUnpublished,
-      handleParticipantTrackUnpublished
-    );
-    space.on(
-      SpaceEvent.ParticipantTrackSubscribed,
-      handleParticipantTrackSubscribed
-    );
-    space.on(
-      SpaceEvent.ParticipantTrackUnsubscribed,
-      handleParticipantTrackUnsubscribed
-    );
-
-    return () => {
-      space.off(SpaceEvent.BroadcastStateChanged, handleBroadcastStateChange);
-      space.off(SpaceEvent.ParticipantJoined, handleParticipantJoined);
-      space.off(SpaceEvent.ParticipantLeft, handleParticipantLeft);
-
-      space.off(
-        SpaceEvent.ParticipantTrackPublished,
-        handleParticipantTrackPublished
-      );
-      space.off(
-        SpaceEvent.ParticipantTrackUnpublished,
-        handleParticipantTrackUnpublished
-      );
-      space.off(
-        SpaceEvent.ParticipantTrackSubscribed,
-        handleParticipantTrackSubscribed
-      );
-      space.off(
-        SpaceEvent.ParticipantTrackUnsubscribed,
-        handleParticipantTrackUnsubscribed
-      );
-    };
+    } else {
+      hideScreenshareToast();
+    }
   }, [
-    space,
-    showBroadcastToast,
-    hideBroadcastToast,
+    isScreenShareActive,
+    isLocalScreenShare,
     showLocalScreenshareToast,
     showRemoteScreenshareToast,
     hideScreenshareToast,
-    showParticipantEventToast,
   ]);
+
+  useEffect(() => {
+    if (isBroadcasting) {
+      showBroadcastToast();
+    } else {
+      hideBroadcastToast();
+    }
+  }, [isBroadcasting, showBroadcastToast, hideBroadcastToast]);
+
+  useEffect(() => {
+    onSpaceEvent(
+      SpaceEvent.ParticipantJoined,
+      (participant: RemoteParticipant) => {
+        let participantName = participant.id.split("|")[0];
+        showParticipantEventToast(`${participantName} joined the space`);
+      }
+    );
+
+    onSpaceEvent(
+      SpaceEvent.ParticipantLeft,
+      (participant: RemoteParticipant) => {
+        let participantName = participant.id.split("|")[0];
+        showParticipantEventToast(`${participantName} left the space`);
+      }
+    );
+  }, [onSpaceEvent, showParticipantEventToast]);
 
   useEffect(() => {
     if (!isRouterReady) return;
 
-    function closeAllTosts() {
+    function closeAllToasts() {
       hideBroadcastToast();
       hideScreenshareToast();
       for (let toastRef in participantEventToastIdRefs.current) {
         toast.close(toastRef);
       }
+      pruneParticipantEventRefs();
     }
 
-    router.events.on("routeChangeStart", closeAllTosts);
+    router.events.on("routeChangeStart", closeAllToasts);
     return () => {
-      router.events.off("routeChangeStart", closeAllTosts);
+      router.events.off("routeChangeStart", closeAllToasts);
     };
-  }, [isRouterReady, router, toast, hideBroadcastToast, hideScreenshareToast]);
+  }, [
+    isRouterReady,
+    router,
+    toast,
+    hideBroadcastToast,
+    hideScreenshareToast,
+    pruneParticipantEventRefs,
+  ]);
 
   return <></>;
 }

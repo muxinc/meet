@@ -68,7 +68,7 @@ const options = ["Excellent", "Good", "Fair", "Poor", "Bad"];
 
 export default function ACRScoreDialog({ isOpen, onClose }: Props) {
   const cancelRef = useRef(null);
-  const { space } = useSpace();
+  const { submitAcrScore } = useSpace();
   const [acrScore, setAcrScore] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
   const [closing, setClosing] = useState(false);
@@ -78,18 +78,18 @@ export default function ACRScoreDialog({ isOpen, onClose }: Props) {
     onChange: (nextValue) => setAcrScore(nextValue),
   });
 
-  const submitACRScore = useCallback(async () => {
-    if (space && acrScore) {
+  const handleSubmittingAcrScore = useCallback(async () => {
+    if (acrScore) {
       setSubmitting(true);
       const numericScore = AcrScore[acrScore as keyof typeof AcrScore];
       try {
-        await space?.submitAcrScore(numericScore);
+        await submitAcrScore(numericScore);
       } catch (e) {
         console.error(e);
       }
       onClose();
     }
-  }, [space, acrScore, onClose]);
+  }, [acrScore, submitAcrScore, onClose]);
 
   const handleClose = useCallback(() => {
     setClosing(true);
@@ -168,7 +168,7 @@ export default function ACRScoreDialog({ isOpen, onClose }: Props) {
               flexDirection="row"
               marginLeft="10px"
               padding="10px 20px"
-              onClick={submitACRScore}
+              onClick={handleSubmittingAcrScore}
               _hover={
                 disableSubmission
                   ? {}

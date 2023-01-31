@@ -1,24 +1,19 @@
 import React, { useEffect, useRef } from "react";
 import { Flex } from "@chakra-ui/react";
-import { Track } from "@mux/spaces-web";
 
 interface Props {
-  track?: Track;
+  attach: (element: HTMLVideoElement) => void;
 }
 
-export default function ScreenShareRenderer({ track }: Props): JSX.Element {
+export default function ScreenShareRenderer({ attach }: Props): JSX.Element {
   const videoEl = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     const el = videoEl.current;
     if (!el) return;
 
-    track?.attach(el);
-
-    return () => {
-      track?.detach(el);
-    };
-  }, [track]);
+    attach(el);
+  }, [attach]);
 
   return (
     <Flex
