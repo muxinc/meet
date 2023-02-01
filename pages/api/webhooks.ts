@@ -11,7 +11,12 @@ export default async function handler(
 ) {
   const headers = req.headers;
   const muxSignature = headers["mux-signature"] as string;
-  const secret = process.env.WEBHOOK_SECRET as string;
+  const secret = process.env.WEBHOOK_SECRET;
+
+  if (!secret) {
+    console.error("WEBHOOK_SECRET not specified");
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).end();
+  }
 
   if (
     req.method === "POST" &&
