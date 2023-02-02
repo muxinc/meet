@@ -2,7 +2,7 @@
 
 Mux Meet is a video conferencing app powered by [Mux Real-Time Video](https://mux.com/real-time-video), written in React, using the [Next.js](https://nextjs.org/) framework.
 
-![Four users in a Mux Meet call](/mux-meet.jpg)
+![Four users in a Mux Meet call](https://user-images.githubusercontent.com/1211390/216212346-b319d137-0d2e-405a-bbab-703cc32763b3.jpg)
 
 # Getting Started
 
@@ -14,13 +14,13 @@ The easiest way to use Mux Meet is to deploy it to Vercel.
 
 After creating your project, you will be prompted to configure it.
 
-![Vercel Configure Project](/Vercel-configure-environment-variables.jpg)
+![Configure Vercel Environment Variables](https://user-images.githubusercontent.com/1211390/216212169-251d87ef-83ae-4b9b-82e8-ae42cb430b02.jpg)
 
 In a separate window, open https://dashboard.mux.com and sign in. You will need to create an account, if you don't already have one.
 
 From the [Mux Dashboard](https://dashboard.mux.com), open Settings from the bottom left and click Access Tokens. Then click "Generate new token" and select Mux Video from the list of permissions. Optionally, give the access token a name like Mux Meet.
 
-![Mux Dashboard New Access Token](/Mux-dashboard-new-access-token.jpg)
+![Create new Mux Access Token](https://user-images.githubusercontent.com/1211390/216212226-d98b377b-7105-4db7-89f7-8b3f6aadd805.jpg)
 
 Once your token is generated, copy and paste the ID and Secret as the values for `MUX_TOKEN_ID` and `MUX_TOKEN_SECRET` in Vercel.
 
@@ -28,7 +28,7 @@ Now go back to https://dashboard.mux.com to generate the Signing Key.
 
 From the [Mux Dashboard](https://dashboard.mux.com), open Settings from the bottom left and click Signing Keys. Then click "Generate new key" and make sure you use the same environment as you did for the Access Token. The Product selection should default to Video.
 
-![Mux Dashboard New Signing Key](/Mux-dashboard-new-signing-key.jpg)
+![Create new Mux Signing Key](https://user-images.githubusercontent.com/1211390/216212263-f8fe2d0a-e8f4-4ba6-8197-bbbe745c9cb1.jpg)
 
 Once your key is generated, copy and paste the ID and Secret as the values for `MUX_SIGNING_KEY` and `MUX_PRIVATE_KEY` in Vercel.
 
@@ -42,7 +42,7 @@ Joining a new Space creates a Space in Mux, but in order to clean up Spaces afte
 
 From the [Mux Dashboard](https://dashboard.mux.com), open Settings from the bottom left and click Webhooks. Then click "Generate new webhook" and make sure you use the same environment as you did for the Access Token. The URL to notify will be your app's URL + `/api/webhooks`.
 
-![Mux Dashboard New Webhook](/Mux-dashboard-new-webhook.jpg)
+![Create new Mux webhook](https://user-images.githubusercontent.com/1211390/216212296-93dad4a3-1b91-4402-8eed-c0325dea0d69.jpg)
 
 Now generate the Webhook and copy the Signing Secret by clicking Show Signing Secret.
 
