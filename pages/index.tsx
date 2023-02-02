@@ -110,7 +110,7 @@ const Home = () => {
         } else if (message.includes("space limit reached")) {
           setErrorModalTitle("Maximum active space limit reached");
           setErrorModalMessage(
-            "There are too many active spaces being used. Please try again later."
+            "This demo app has reached the maximum number of active spaces, please try again later when things settle down."
           );
           onErrorModalOpen();
         }
