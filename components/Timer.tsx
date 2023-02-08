@@ -7,18 +7,29 @@ import moment from "moment";
 
 import { useSpace } from "hooks/useSpace";
 
-const Display = styled.div`
+const Display = styled.div<{ isUrgent: boolean }>`
   position: absolute;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: end;
   background-color: #383838;
   padding: 0.5em;
   top: 12px;
   right: 12px;
+  font-size: 1.5em;
   font-variant-numeric: tabular-nums;
   color: white;
   user-select: none;
   border-radius: 3px;
+  z-index: 200;
+
+  ${(props) =>
+    props.isUrgent &&
+    `
+  #countdown {
+    color: red;
+  }
+  `}
 `;
 
 const getClock = (diff: number) => {
@@ -33,10 +44,12 @@ const getClock = (diff: number) => {
 
 const Timer = (): JSX.Element => {
   const { spaceEndsAt, leaveSpace } = useSpace();
+  const diff = moment(spaceEndsAt).diff(moment());
   const [timeDisplay, setTimeDisplay] = useState<string>(
-    spaceEndsAt ? getClock(moment(spaceEndsAt).diff(moment())) : "00:00"
+    spaceEndsAt ? getClock(diff) : "00:00"
   );
   const router = useRouter();
+  const twoMinutesleft = 120 >= Math.floor(diff / 1000);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -54,12 +67,10 @@ const Timer = (): JSX.Element => {
   }, [router, leaveSpace, spaceEndsAt]);
 
   return (
-    <Tooltip label="This temporary space will close after the timer expires.">
-      <Display>
-        <Box marginRight="6px">
-          <MdTimer size="20px" />
-        </Box>{" "}
-        {timeDisplay}
+    <Tooltip label="This demo space will close after the timer expires.">
+      <Display isUrgent={twoMinutesleft}>
+        <span>Time Left</span>
+        <span id="countdown">{timeDisplay}</span>
       </Display>
     </Tooltip>
   );
