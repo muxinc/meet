@@ -48,6 +48,7 @@ interface SpaceState {
   publishMicrophone: (deviceId: string) => void;
   unPublishDevice: (deviceId: string) => void;
 
+  isLocalScreenShareSupported: boolean;
   isScreenShareActive: boolean;
   isLocalScreenShare: boolean;
   screenShareError: string | null;
@@ -88,6 +89,12 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
   const [isJoined, setIsJoined] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [isLocalScreenShareSupported, setIsLocalScreenShareSupported] =
+    useState(
+      typeof window !== "undefined"
+        ? !!navigator?.mediaDevices?.getDisplayMedia
+        : false
+    );
   const [screenShareTrack, setScreenShareTrack] = useState<Track>();
   const [screenShareError, setScreenShareError] = useState<string | null>(null);
   const [participantScreenSharing, setParticipantScreenSharing] = useState<
@@ -101,6 +108,10 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
   const screenShareParticipantConnectionId = useMemo(() => {
     return participantScreenSharing?.connectionId;
   }, [participantScreenSharing]);
+
+  useEffect(() => {
+    setIsLocalScreenShareSupported(!!navigator.mediaDevices.getDisplayMedia);
+  }, []);
 
   const isScreenShareActive = useMemo(() => {
     return !!screenShareTrack;
@@ -563,6 +574,7 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
         publishMicrophone,
         unPublishDevice,
 
+        isLocalScreenShareSupported,
         isScreenShareActive,
         isLocalScreenShare,
         screenShareError,

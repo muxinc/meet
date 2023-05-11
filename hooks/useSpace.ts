@@ -20,6 +20,7 @@ interface Space {
   publishMicrophone: (deviceId: string) => void;
   unPublishDevice: (deviceId: string) => void;
 
+  isLocalScreenShareSupported: boolean;
   isScreenShareActive: boolean;
   isLocalScreenShare: boolean;
   screenShareError: string | null;
@@ -49,6 +50,7 @@ export const useSpace = (): Space => {
     publishMicrophone,
     unPublishDevice,
 
+    isLocalScreenShareSupported,
     isScreenShareActive,
     isLocalScreenShare,
     screenShareError,
@@ -76,6 +78,7 @@ export const useSpace = (): Space => {
     publishMicrophone,
     unPublishDevice,
 
+    isLocalScreenShareSupported,
     isScreenShareActive,
     isLocalScreenShare,
     screenShareError,
