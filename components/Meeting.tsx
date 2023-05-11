@@ -24,8 +24,7 @@ export default function Meeting(): JSX.Element {
   const { isChatOpen } = useContext(ChatContext);
   const { width = 0, height = 0 } = useWindowDimensions();
 
-  const availableWidth =
-    width - (isChatOpen && width >= height ? chatWidth : 0);
+  const availableWidth = width - (isChatOpen && width > 800 ? chatWidth : 0);
 
   const paddingY = height < 600 ? 10 : 40;
   const paddingX = availableWidth < 800 ? 40 : 60;
