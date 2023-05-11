@@ -93,9 +93,8 @@ export default function UserInteractionPrompt({
         priority
         alt="logo"
         width={300}
-        height={70}
         src={muxLogo}
-        style={{ zIndex: 0 }}
+        style={{ zIndex: 0, height: "auto" }}
       />
       <form onSubmit={handleSubmit}>
         <Stack spacing="4">
