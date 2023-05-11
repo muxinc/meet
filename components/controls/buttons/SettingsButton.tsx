@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useState } from "react";
+import React from "react";
 import {
   Box,
   IconButton,
@@ -9,13 +9,9 @@ import {
   useDisclosure,
   useToast,
 } from "@chakra-ui/react";
-import axios from "axios";
 import { useRouter } from "next/router";
 
 import { copyLinkToastConfig, ToastIds } from "shared/toastConfigs";
-
-import UserContext from "context/User";
-import SpaceContext from "context/Space";
 import { useSpace } from "hooks/useSpace";
 import useWindowDimensions from "hooks/useWindowDimension";
 
