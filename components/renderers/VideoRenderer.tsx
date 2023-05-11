@@ -8,7 +8,7 @@ interface Props {
   height: number;
   local: boolean;
   connectionId: string;
-  attach: (element: HTMLVideoElement) => void;
+  attachFunc: (element: HTMLVideoElement) => void;
 }
 
 export default function VideoRenderer({
@@ -16,7 +16,7 @@ export default function VideoRenderer({
   height,
   local,
   connectionId,
-  attach,
+  attachFunc,
 }: Props): JSX.Element {
   const videoEl = useRef<HTMLVideoElement | null>(null);
   const [disableFlip, setDisableFlip] = useState(false);
@@ -33,7 +33,7 @@ export default function VideoRenderer({
     const el = videoEl.current;
     if (!el) return;
 
-    attach(el);
+    attachFunc(el);
 
     el.addEventListener("enterpictureinpicture", handleEnterPiP);
     el.addEventListener("leavepictureinpicture", handleLeavePiP);
@@ -41,7 +41,7 @@ export default function VideoRenderer({
       el.removeEventListener("enterpictureinpicture", handleEnterPiP);
       el.removeEventListener("leavepictureinpicture", handleLeavePiP);
     };
-  }, [attach]);
+  }, [attachFunc]);
 
   return (
     <video

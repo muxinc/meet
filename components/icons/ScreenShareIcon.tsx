@@ -1,16 +1,16 @@
 import React from "react";
 import Image from "next/image";
 
-import screenShareOff from "../../public/screenShareOff.svg";
+import screenShare from "../../public/screen-share.svg";
 
-export default function ScreenShareOffIcon(): JSX.Element {
+export default function ScreenShareIcon(): JSX.Element {
   return (
     <Image
       priority
-      alt="screen share off"
+      alt="Screen share"
       width={25}
       height={25}
-      src={screenShareOff}
+      src={screenShare}
       style={{ width: "25px", height: "25px" }}
     />
   );

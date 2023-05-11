@@ -21,7 +21,6 @@ import UserContext from "context/User";
 import { useUserMedia } from "hooks/useUserMedia";
 
 import Header from "components/Header";
-import SpaceMan from "components/SpaceMan";
 import MicrophoneButton from "components/controls/buttons/MicrophoneButton";
 import CameraButton from "components/controls/buttons/CameraButton";
 import ErrorModal from "components/modals/ErrorModal";
@@ -52,7 +51,7 @@ const Home = () => {
       } else if (res.status === 401) {
         throw new Error("Not authorized to create space");
       } else if (res.status === 419) {
-        throw new Error("Maximum active space limit reached");
+        throw new Error("Maximum active spaces reached");
       } else {
         throw new Error("Error creating space");
       }
@@ -107,10 +106,10 @@ const Home = () => {
             "Make sure MUX_TOKEN_ID and MUX_TOKEN_SECRET are set. Refer to the README in https://github.com/muxinc/meet for more details."
           );
           onErrorModalOpen();
-        } else if (message.includes("space limit reached")) {
+        } else if (message.includes("Maximum active spaces reached")) {
           setErrorModalTitle("Maximum active space limit reached");
           setErrorModalMessage(
-            "This demo app has reached the maximum number of active spaces, please try again later when things settle down."
+            "There are too many active spaces being used. Please try again later."
           );
           onErrorModalOpen();
         }
@@ -173,13 +172,12 @@ const Home = () => {
                 </Stack>
               </form>
             </Box>
-            <HStack>
+            <HStack marginTop="1rem">
               <MicrophoneButton />
               <CameraButton />
             </HStack>
           </Flex>
         </Center>
-        <SpaceMan />
       </Flex>
 
       <ErrorModal

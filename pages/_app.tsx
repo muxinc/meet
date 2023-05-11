@@ -6,6 +6,7 @@ import { theme } from "lib/theme";
 import { UserProvider } from "context/User";
 import { SpaceProvider } from "context/Space";
 import { UserMediaProvider } from "context/UserMedia";
+import { ChatProvider } from "context/Chat";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,7 +23,9 @@ function MyApp({ Component, pageProps }: AppProps) {
         <UserProvider>
           <UserMediaProvider>
             <SpaceProvider>
-              <Component {...pageProps} />
+              <ChatProvider>
+                <Component {...pageProps} />
+              </ChatProvider>
             </SpaceProvider>
           </UserMediaProvider>
         </UserProvider>

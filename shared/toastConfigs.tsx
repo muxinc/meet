@@ -14,12 +14,10 @@ export const copyLinkToastConfig: UseToastOptions = {
   render: () => {
     return (
       <Box
-        background="#FCEAF0"
-        border="1px solid #DF2868"
-        borderRadius="3px"
-        color="#666666"
+        color="#0a0a0b"
+        background="#cff1fc"
         fontSize="14px"
-        padding="15px 20px"
+        padding="15px 50px"
         textAlign="center"
       >
         Share link copied to your clipboard.

@@ -2,7 +2,6 @@ import styled from "@emotion/styled";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef } from "react";
 import { Box, ToastId, useToast } from "@chakra-ui/react";
-import { RemoteParticipant, SpaceEvent } from "@mux/spaces-web";
 
 import { useSpace } from "hooks/useSpace";
 
@@ -15,12 +14,10 @@ import {
 } from "shared/toastConfigs";
 
 const ToastBox = styled(Box)`
-  color: #666666;
-  background: #fceaf0;
-  border: 1px solid #df2868;
-  border-radius: 3px;
+  color: #0a0a0b;
+  background: #cff1fc;
   font-size: 14px;
-  padding: 15px 20px;
+  padding: 15px 50px;
   text-align: center;
 `;
 
@@ -29,12 +26,11 @@ export default function Toasts(): JSX.Element {
   const router = useRouter();
   const { isReady: isRouterReady } = router;
   const {
-    onSpaceEvent,
     isBroadcasting,
     isScreenShareActive,
     stopScreenShare,
     isLocalScreenShare,
-    screenShareParticipantId,
+    screenShareParticipantName,
   } = useSpace();
   const screenshareToastRef = useRef<ToastId>();
   const broadcastingToastRef = useRef<ToastId>();
@@ -50,14 +46,19 @@ export default function Toasts(): JSX.Element {
               You are sharing your screen.
               <Box
                 as="button"
-                color="#DF2868"
+                backgroundColor="transparent"
+                border="1px solid #0A0A0B"
+                height="30px"
+                borderRadius="15px"
+                paddingLeft="15px"
+                paddingRight="15px"
+                marginLeft="20px"
                 onClick={() => {
                   stopScreenShare();
                   onClose();
                 }}
-                paddingLeft="10px"
               >
-                Stop Sharing
+                Stop sharing
               </Box>
             </ToastBox>
           );
@@ -69,17 +70,18 @@ export default function Toasts(): JSX.Element {
   const showRemoteScreenshareToast = useCallback(() => {
     if (
       !toast.isActive(ToastIds.VIEWING_SHARED_SCREEN_TOAST_ID) &&
-      screenShareParticipantId
+      screenShareParticipantName
     ) {
-      const participantName = screenShareParticipantId.split("|")[0];
       screenshareToastRef.current = toast({
         ...viewingSharedScreenToastConfig,
         render: () => (
-          <ToastBox>{participantName} is sharing their screen.</ToastBox>
+          <ToastBox>
+            {screenShareParticipantName} is sharing their screen.
+          </ToastBox>
         ),
       });
     }
-  }, [toast, screenShareParticipantId]);
+  }, [toast, screenShareParticipantName]);
 
   const hideScreenshareToast = useCallback(() => {
     if (screenshareToastRef.current) {
@@ -156,24 +158,6 @@ export default function Toasts(): JSX.Element {
       hideBroadcastToast();
     }
   }, [isBroadcasting, showBroadcastToast, hideBroadcastToast]);
-
-  useEffect(() => {
-    onSpaceEvent(
-      SpaceEvent.ParticipantJoined,
-      (participant: RemoteParticipant) => {
-        let participantName = participant.id.split("|")[0];
-        showParticipantEventToast(`${participantName} joined the space`);
-      }
-    );
-
-    onSpaceEvent(
-      SpaceEvent.ParticipantLeft,
-      (participant: RemoteParticipant) => {
-        let participantName = participant.id.split("|")[0];
-        showParticipantEventToast(`${participantName} left the space`);
-      }
-    );
-  }, [onSpaceEvent, showParticipantEventToast]);
 
   useEffect(() => {
     if (!isRouterReady) return;

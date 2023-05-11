@@ -1,21 +1,21 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { Box, Tooltip } from "@chakra-ui/react";
+import { Tooltip } from "@chakra-ui/react";
 import styled from "@emotion/styled";
-import { MdTimer } from "react-icons/md";
 import moment from "moment";
 
 import { useSpace } from "hooks/useSpace";
+import { transientOptions } from "lib/utils";
 
-const Display = styled.div<{ isUrgent: boolean }>`
+const Display = styled("div", transientOptions)<{ $isUrgent: boolean }>`
   position: absolute;
   display: flex;
   flex-direction: column;
-  align-items: end;
+  align-items: start;
   background-color: #383838;
   padding: 0.5em;
   top: 12px;
-  right: 12px;
+  left: 12px;
   font-size: 1.5em;
   font-variant-numeric: tabular-nums;
   color: white;
@@ -24,7 +24,7 @@ const Display = styled.div<{ isUrgent: boolean }>`
   z-index: 200;
 
   ${(props) =>
-    props.isUrgent &&
+    props.$isUrgent &&
     `
   #countdown {
     color: red;
@@ -49,14 +49,18 @@ const Timer = (): JSX.Element => {
     spaceEndsAt ? getClock(diff) : "00:00"
   );
   const router = useRouter();
-  const twoMinutesleft = 120 >= Math.floor(diff / 1000);
+  const [isTwoMinutesLeft, setIsTwoMinutesLeft] = useState(
+    120 >= Math.floor(diff / 1000)
+  );
 
   useEffect(() => {
     const timer = setInterval(() => {
       const diff = moment(spaceEndsAt).diff(moment());
 
       if (diff > 0) {
+        const clock = getClock(diff);
         setTimeDisplay(getClock(diff));
+        setIsTwoMinutesLeft(120 >= Math.floor(diff / 1000));
       } else {
         leaveSpace();
         router.push("/");
@@ -64,11 +68,11 @@ const Timer = (): JSX.Element => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [router, leaveSpace, spaceEndsAt]);
+  }, [router, leaveSpace, spaceEndsAt, isTwoMinutesLeft]);
 
   return (
     <Tooltip label="This demo space will close after the timer expires.">
-      <Display isUrgent={twoMinutesleft}>
+      <Display $isUrgent={isTwoMinutesLeft}>
         <span>Time Left</span>
         <span id="countdown">{timeDisplay}</span>
       </Display>

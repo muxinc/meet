@@ -1,17 +1,21 @@
 import { useContext } from "react";
-import { AcrScore, SpaceEvent } from "@mux/spaces-web";
+import { AcrScore } from "@mux/spaces-web";
 
 import SpaceContext from "../context/Space";
 
 interface Space {
-  joinSpace: (jwt: string, endsAt?: number) => Promise<void>;
+  joinSpace: (
+    jwt: string,
+    endsAt?: number,
+    displayName?: string
+  ) => Promise<void>;
   joinError: string | null;
   isJoined: boolean;
 
   connectionIds: string[];
+  localParticipantConnectionId?: string;
   isBroadcasting: boolean;
   participantCount: number;
-  onSpaceEvent: (event: SpaceEvent, callback: (...args: any) => void) => void;
   publishCamera: (deviceId: string) => void;
   publishMicrophone: (deviceId: string) => void;
   unPublishDevice: (deviceId: string) => void;
@@ -22,7 +26,8 @@ interface Space {
   attachScreenShare: (element: HTMLVideoElement) => void;
   startScreenShare: () => void;
   stopScreenShare: () => void;
-  screenShareParticipantId?: string;
+  screenShareParticipantConnectionId?: string;
+  screenShareParticipantName?: string;
 
   spaceEndsAt: number | null;
   leaveSpace: () => void;
@@ -31,6 +36,8 @@ interface Space {
 
 export const useSpace = (): Space => {
   const {
+    space,
+
     joinSpace,
     joinError,
     isJoined,
@@ -38,7 +45,6 @@ export const useSpace = (): Space => {
     connectionIds,
     isBroadcasting,
     participantCount,
-    onSpaceEvent,
     publishCamera,
     publishMicrophone,
     unPublishDevice,
@@ -49,7 +55,8 @@ export const useSpace = (): Space => {
     attachScreenShare,
     startScreenShare,
     stopScreenShare,
-    screenShareParticipantId,
+    screenShareParticipantConnectionId,
+    screenShareParticipantName,
 
     spaceEndsAt,
     leaveSpace,
@@ -62,9 +69,9 @@ export const useSpace = (): Space => {
     isJoined,
 
     connectionIds,
+    localParticipantConnectionId: space?.localParticipant?.connectionId,
     isBroadcasting,
     participantCount,
-    onSpaceEvent,
     publishCamera,
     publishMicrophone,
     unPublishDevice,
@@ -75,7 +82,8 @@ export const useSpace = (): Space => {
     attachScreenShare,
     startScreenShare,
     stopScreenShare,
-    screenShareParticipantId,
+    screenShareParticipantConnectionId,
+    screenShareParticipantName,
 
     spaceEndsAt,
     leaveSpace,

@@ -3,18 +3,22 @@ import React, {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
+import { useRouter } from "next/router";
 import {
   AcrScore,
   ActiveSpeaker,
+  CustomEvent,
   getDisplayMedia,
   LocalParticipant,
   LocalTrack,
   RemoteParticipant,
   Space,
   SpaceEvent,
+  SpaceOptionsParams,
   Track,
   TrackSource,
 } from "@mux/spaces-web";
@@ -29,14 +33,17 @@ interface SpaceState {
   localParticipant: LocalParticipant | null;
   remoteParticipants: RemoteParticipant[];
 
-  joinSpace: (jwt: string, endsAt?: number) => Promise<void>;
+  joinSpace: (
+    jwt: string,
+    endsAt?: number,
+    displayName?: string
+  ) => Promise<void>;
   joinError: string | null;
   isJoined: boolean;
 
   connectionIds: string[];
   isBroadcasting: boolean;
   participantCount: number;
-  onSpaceEvent: (event: SpaceEvent, callback: (...args: any) => void) => void;
   publishCamera: (deviceId: string) => void;
   publishMicrophone: (deviceId: string) => void;
   unPublishDevice: (deviceId: string) => void;
@@ -47,11 +54,15 @@ interface SpaceState {
   attachScreenShare: (element: HTMLVideoElement) => void;
   startScreenShare: () => void;
   stopScreenShare: () => void;
-  screenShareParticipantId?: string;
+  screenShareParticipantConnectionId?: string;
+  screenShareParticipantName?: string;
 
   spaceEndsAt: number | null;
   leaveSpace: () => void;
   submitAcrScore: (score: AcrScore) => Promise<void> | undefined;
+
+  setDisplayName: (name: string) => Promise<LocalParticipant | undefined>;
+  publishCustomEvent: (payload: string) => Promise<CustomEvent | undefined>;
 }
 
 export const SpaceContext = createContext({} as SpaceState);
@@ -63,7 +74,7 @@ type Props = {
 };
 
 export const SpaceProvider: React.FC<Props> = ({ children }) => {
-  const { microphoneMuted, microphoneDeviceId, cameraOff, cameraDeviceId } =
+  const { userWantsMicMuted, microphoneDeviceId, cameraOff, cameraDeviceId } =
     useContext(UserContext);
   const { getMicrophone, getCamera } = useContext(UserMediaContext);
 
@@ -83,8 +94,12 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
     LocalParticipant | RemoteParticipant | null
   >(null);
 
-  const screenShareParticipantId = useMemo(() => {
-    return participantScreenSharing?.id;
+  const screenShareParticipantName = useMemo(() => {
+    return participantScreenSharing?.displayName;
+  }, [participantScreenSharing]);
+
+  const screenShareParticipantConnectionId = useMemo(() => {
+    return participantScreenSharing?.connectionId;
   }, [participantScreenSharing]);
 
   const isScreenShareActive = useMemo(() => {
@@ -110,11 +125,15 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
       const tracksToPublish = [];
       if (cameraDeviceId && !cameraOff) {
         const cameraTrack = await getCamera(cameraDeviceId);
-        tracksToPublish.push(cameraTrack);
+        if (cameraTrack) {
+          tracksToPublish.push(cameraTrack);
+        }
       }
       if (microphoneDeviceId) {
         const microphoneTrack = await getMicrophone(microphoneDeviceId);
-        tracksToPublish.push(microphoneTrack);
+        if (microphoneTrack) {
+          tracksToPublish.push(microphoneTrack);
+        }
       }
       if (tracksToPublish.length > 0) {
         const publishedTracks = await localParticipant.publishTracks(
@@ -123,7 +142,7 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
         const publishedMicrophone = publishedTracks.find(
           (track) => track.source === TrackSource.Microphone
         );
-        if (publishedMicrophone && microphoneMuted) {
+        if (publishedMicrophone && userWantsMicMuted) {
           publishedMicrophone.mute();
         }
       }
@@ -134,15 +153,23 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
       microphoneDeviceId,
       getCamera,
       cameraDeviceId,
-      microphoneMuted,
+      userWantsMicMuted,
     ]
   );
 
+  const router = useRouter();
+
   const joinSpace = useCallback(
-    async (jwt: string, endsAt?: number) => {
+    async (jwt: string, endsAt?: number, displayName?: string) => {
       let _space: Space;
       try {
-        _space = new Space(jwt);
+        let spaceOpts: SpaceOptionsParams = { displayName };
+        if (router.isReady && typeof router.query.auto_sub_limit === "string") {
+          spaceOpts.automaticParticipantLimit = parseInt(
+            router.query.auto_sub_limit
+          );
+        }
+        _space = new Space(jwt, spaceOpts);
       } catch (e: any) {
         setJoinError(e.message);
         return;
@@ -253,6 +280,31 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
         }
       };
 
+      const handleParticipantDisplayNameChanged = (
+        updated: LocalParticipant | RemoteParticipant
+      ) => {
+        if (updated instanceof RemoteParticipant) {
+          setRemoteParticipants((oldParticipantArray) => {
+            const found = oldParticipantArray.find(
+              (p) => p.connectionId === updated.connectionId
+            );
+            if (found) {
+              found.displayName = updated.displayName;
+            }
+            return oldParticipantArray;
+          });
+          // no participant found for this update
+        } else {
+          setLocalParticipant((local) => {
+            if (!local) {
+              return null;
+            }
+            local.displayName = updated.displayName;
+            return local;
+          });
+        }
+      };
+
       const reorderRemoteParticipantsBySubscription = (
         participantWhoChanged: RemoteParticipant
       ) => {
@@ -293,6 +345,10 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
         SpaceEvent.ParticipantTrackUnsubscribed,
         handleParticipantTrackUnsubscribed
       );
+      _space.on(
+        SpaceEvent.ParticipantDisplayNameChanged,
+        handleParticipantDisplayNameChanged
+      );
 
       setSpace(_space);
 
@@ -308,18 +364,7 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
         setIsJoined(false);
       }
     },
-    [publishForLocalParticipant]
-  );
-
-  const onSpaceEvent = useCallback(
-    (event: SpaceEvent, callback: (...args: any) => void) => {
-      try {
-        space?.on(event, callback);
-      } catch (_error) {
-        throw new Error("Join a space before adding event handlers.");
-      }
-    },
-    [space]
+    [publishForLocalParticipant, router.isReady, router.query.auto_sub_limit]
   );
 
   const publishMicrophone = useCallback(
@@ -339,10 +384,13 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
           throw new Error("That microphone is already published.");
         }
         const microphoneTrack = await getMicrophone(deviceId);
-        localParticipant.publishTracks([microphoneTrack]);
+        await localParticipant.publishTracks([microphoneTrack]);
+        if (userWantsMicMuted) {
+          microphoneTrack.mute();
+        }
       }
     },
-    [localParticipant, microphoneDeviceId, getMicrophone]
+    [localParticipant, microphoneDeviceId, getMicrophone, userWantsMicMuted]
   );
 
   const publishCamera = useCallback(
@@ -449,12 +497,16 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
 
   const submitAcrScore = useCallback(
     (score: AcrScore) => {
-      try {
-        return space?.submitAcrScore(score);
-      } catch (error) {
+      if (!space) {
         throw new Error(
           "You must join a space before submitting an ACR score."
         );
+      }
+
+      try {
+        return space.submitAcrScore(score);
+      } catch (error) {
+        throw new Error(`Error when submitting ACR score: ${error}`);
       }
     },
     [space]
@@ -470,10 +522,28 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
       setIsBroadcasting(false);
       setLocalParticipant(null);
       setIsJoined(false);
-      setSpace(null);
       setSpaceEndsAt(null);
+      // Don't call setSpace(null) here, as things like ACR Score submission depend on it
     }
   }, [space]);
+
+  const publishCustomEvent = useCallback(
+    async (payload: string) => {
+      try {
+        return await space?.localParticipant?.publishCustomEvent(payload);
+      } catch (error) {
+        throw error;
+      }
+    },
+    [space]
+  );
+
+  const setDisplayName = useCallback(
+    async (name: string) => {
+      return await space?.localParticipant?.setDisplayName(name);
+    },
+    [space]
+  );
 
   return (
     <SpaceContext.Provider
@@ -489,7 +559,6 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
         connectionIds,
         isBroadcasting,
         participantCount,
-        onSpaceEvent,
         publishCamera,
         publishMicrophone,
         unPublishDevice,
@@ -500,11 +569,15 @@ export const SpaceProvider: React.FC<Props> = ({ children }) => {
         attachScreenShare,
         startScreenShare,
         stopScreenShare,
-        screenShareParticipantId,
+        screenShareParticipantConnectionId,
+        screenShareParticipantName,
 
         leaveSpace,
         submitAcrScore,
         spaceEndsAt,
+
+        setDisplayName,
+        publishCustomEvent,
       }}
     >
       {children}

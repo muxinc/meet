@@ -1,8 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { IconButton, Center, Flex } from "@chakra-ui/react";
 
-import { MAX_PARTICIPANTS_PER_PAGE } from "lib/constants";
-
 import UserContext from "context/User";
 
 import { useSpace } from "hooks/useSpace";
@@ -12,6 +10,14 @@ import GalleryLayout from "./GalleryLayout";
 import ParticipantAudio from "./ParticipantAudio";
 import ChevronLeftIcon from "components/icons/ChevronLeftIcon";
 import ChevronRightIcon from "components/icons/ChevronRightIcon";
+
+function pushToFront<T>(array: T[], element: T) {
+  const index = array.findIndex((el) => el === element);
+  if (index) {
+    array.splice(index, 1);
+    array.unshift(element);
+  }
+}
 
 interface Props {
   gap: number;
@@ -24,23 +30,36 @@ export default function Gallery({
   gap,
   width,
   height,
-  participantsPerPage = MAX_PARTICIPANTS_PER_PAGE,
+  participantsPerPage,
 }: Props): JSX.Element {
   const [currentPage, setCurrentPage] = useState(1);
-  const { connectionIds, participantCount } = useSpace();
+  const {
+    connectionIds,
+    participantCount,
+    localParticipantConnectionId,
+    screenShareParticipantConnectionId,
+  } = useSpace();
   const { pinnedConnectionId } = React.useContext(UserContext);
 
-  const sortedConnectionIds = useMemo(() => {
-    return [...connectionIds].sort((a, b) => {
-      if (a === pinnedConnectionId) {
-        return -1;
-      } else if (b === pinnedConnectionId) {
-        return 1;
-      } else {
-        return 0;
+  const orderedConnectionIds = useMemo(() => {
+    const ids = [...connectionIds];
+    [
+      screenShareParticipantConnectionId,
+      pinnedConnectionId,
+      localParticipantConnectionId,
+    ].forEach((id) => {
+      if (id) {
+        pushToFront(ids, id);
       }
     });
-  }, [connectionIds, pinnedConnectionId]);
+
+    return ids;
+  }, [
+    connectionIds,
+    localParticipantConnectionId,
+    pinnedConnectionId,
+    screenShareParticipantConnectionId,
+  ]);
 
   const numberPages = useMemo(() => {
     if (participantCount >= participantsPerPage) {
@@ -59,14 +78,19 @@ export default function Gallery({
   const paginatedConnectionIds = useMemo(() => {
     const startIndex = currentPage * participantsPerPage - participantsPerPage;
     const endIndex = startIndex + participantsPerPage;
-    const pageParticipants = sortedConnectionIds.slice(startIndex, endIndex);
+    const pageParticipants = orderedConnectionIds.slice(startIndex, endIndex);
     // if there are no participants, then only the local view will show up on the page
     // we need to go back to the previous page.
     if (pageParticipants.length === 0) {
       goToPreviousPage();
     }
     return pageParticipants;
-  }, [sortedConnectionIds, currentPage, participantsPerPage, goToPreviousPage]);
+  }, [
+    orderedConnectionIds,
+    currentPage,
+    participantsPerPage,
+    goToPreviousPage,
+  ]);
 
   const hidePaginateCtrlRight = currentPage === numberPages;
 

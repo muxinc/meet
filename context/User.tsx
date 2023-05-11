@@ -4,13 +4,13 @@ import { v4 as uuidv4 } from "uuid";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 
 interface UserState {
-  participantId: string;
+  id: string;
   participantName: string;
   setParticipantName: (newName: string) => string;
   interactionRequired: boolean;
   setInteractionRequired: (requiresInteraction: boolean) => void;
-  microphoneMuted: boolean;
-  setMicrophoneMuted: (mute: boolean) => void;
+  userWantsMicMuted: boolean;
+  setUserWantsMicMuted: (mute: boolean) => void;
   cameraOff: boolean;
   setCameraOff: (mute: boolean) => void;
   microphoneDeviceId: string;
@@ -25,10 +25,6 @@ const UserContext = createContext({} as UserState);
 
 export default UserContext;
 
-function generateId(value: string) {
-  return `${value}|${uuidv4()}`;
-}
-
 interface Props {
   children: ReactNode;
 }
@@ -39,10 +35,11 @@ export const UserProvider = ({ children }: Props) => {
     "participantName",
     ""
   );
-  const [participantId, setParticipantId] = useState(
-    generateId(participantName)
-  );
-  const [microphoneMuted, setMicrophoneMuted] = useState(false);
+
+  // This should never change unless we reload
+  const id = uuidv4();
+
+  const [userWantsMicMuted, setUserWantsMicMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(false);
 
   const [microphoneDeviceId, setMicrophoneDeviceId] = useLocalStorage(
@@ -58,9 +55,7 @@ export const UserProvider = ({ children }: Props) => {
   const handleSetParticipantName = useCallback(
     (name: string) => {
       setParticipantName(name);
-      const newId = generateId(name);
-      setParticipantId(newId);
-      return newId;
+      return name;
     },
     [setParticipantName]
   );
@@ -68,13 +63,13 @@ export const UserProvider = ({ children }: Props) => {
   return (
     <UserContext.Provider
       value={{
-        participantId,
+        id,
         participantName,
         setParticipantName: handleSetParticipantName,
         interactionRequired,
         setInteractionRequired,
-        microphoneMuted,
-        setMicrophoneMuted,
+        userWantsMicMuted,
+        setUserWantsMicMuted,
         cameraOff,
         setCameraOff,
         microphoneDeviceId,

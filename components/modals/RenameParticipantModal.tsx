@@ -1,4 +1,10 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  useContext,
+} from "react";
 import {
   Modal,
   ModalOverlay,
@@ -12,71 +18,64 @@ import {
   FormControl,
   FormHelperText,
   Input,
+  Divider,
 } from "@chakra-ui/react";
 
 import UserContext from "context/User";
+import SpaceContext from "context/Space";
 
-type Props = Pick<ReturnType<typeof useDisclosure>, "isOpen" | "onClose"> & {
-  onRename: (newName: string) => void;
-};
+type Props = Pick<ReturnType<typeof useDisclosure>, "isOpen" | "onClose"> & {};
 
 export default function RenameParticipantModal({
-  onRename,
   isOpen,
   onClose,
 }: Props): JSX.Element {
   const user = React.useContext(UserContext);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [participantName, setParticipantName] = useState(user.participantName);
+  const { setDisplayName } = useContext(SpaceContext);
 
   const invalidParticipantName = useMemo(
     () => !participantName,
     [participantName]
   );
 
-  const handleParticipantIdChange = (event: { target: { value: string } }) => {
+  const handleDisplayNameChanged = (event: { target: { value: string } }) => {
     setParticipantName(event.target.value);
   };
 
-  const submit = useCallback(() => {
-    if (invalidParticipantName) return;
+  const handleClose = useCallback(() => {
+    setParticipantName(user.participantName);
+    onClose();
+  }, [onClose, setParticipantName, user]);
 
+  const submit = useCallback(async () => {
+    if (invalidParticipantName) return;
     if (user.participantName !== participantName) {
-      const newParticipantId = user.setParticipantName!(participantName);
-      onRename(newParticipantId);
+      user.setParticipantName(participantName);
+      await setDisplayName(participantName);
     }
     onClose();
-  }, [
-    invalidParticipantName,
-    onClose,
-    onRename,
-    participantName,
-    user.participantName,
-    user.setParticipantName,
-  ]);
+  }, [invalidParticipantName, onClose, participantName, setDisplayName, user]);
 
   return (
-    <Modal
-      isCentered
-      isOpen={isOpen}
-      onClose={() => {
-        setParticipantName(user.participantName);
-        onClose();
-      }}
-      initialFocusRef={nameInputRef}
-    >
+    <Modal onClose={handleClose} isOpen={isOpen} isCentered>
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>{"What's your name?"}</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
+
+      <ModalContent borderRadius="0px">
+        <ModalHeader color="#242628" fontSize="18px" fontWeight="normal">
+          {"What's your name?"}
+        </ModalHeader>
+        <ModalCloseButton color="#666666" marginTop="6px" marginRight="3px" />
+        <Divider color="#E8E8E8" opacity={1} />
+        <ModalBody my="17px">
           <FormControl isInvalid={invalidParticipantName}>
             <Input
-              maxLength={40}
+              maxLength={64}
               ref={nameInputRef}
               id="participant_id"
               value={participantName}
-              onChange={handleParticipantIdChange}
+              onChange={handleDisplayNameChanged}
               onKeyPress={(e) => {
                 if (e.key === "Enter") {
                   submit();
@@ -88,11 +87,14 @@ export default function RenameParticipantModal({
             </FormHelperText>
           </FormControl>
         </ModalBody>
-
         <ModalFooter>
+          <Button variant="muxDefault" onClick={handleClose}>
+            Cancel
+          </Button>
           <Button
+            variant="muxConfirmation"
             type="submit"
-            colorScheme="blue"
+            marginLeft="10px"
             onClick={submit}
             isDisabled={invalidParticipantName}
           >

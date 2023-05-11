@@ -2,6 +2,7 @@ import React, {
   createContext,
   ReactNode,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -75,8 +76,13 @@ type Props = {
 };
 
 export const UserMediaProvider: React.FC<Props> = ({ children }) => {
-  const { setCameraDeviceId, setMicrophoneDeviceId } =
-    React.useContext(UserContext);
+  const {
+    cameraDeviceId,
+    setCameraDeviceId,
+    microphoneDeviceId,
+    setMicrophoneDeviceId,
+    userWantsMicMuted,
+  } = React.useContext(UserContext);
   const [microphoneDevices, setMicrophoneDevices] = useState<InputDeviceInfo[]>(
     []
   );
@@ -106,7 +112,7 @@ export const UserMediaProvider: React.FC<Props> = ({ children }) => {
     setLocalAudioAnalyser(analyser);
   }, []);
 
-  async function loadDevices() {
+  const loadDevices = useCallback(async () => {
     const availableDevices = await navigator.mediaDevices.enumerateDevices();
 
     const audioInputDevices = availableDevices.filter(
@@ -118,17 +124,17 @@ export const UserMediaProvider: React.FC<Props> = ({ children }) => {
       (device) => device.kind === "videoinput"
     );
     setCameraDevices(videoInputDevices);
-  }
+  }, []);
 
   const requestPermissionAndPopulateDevices = useCallback(async () => {
     let tracks: LocalTrack[] = [];
     try {
       tracks = await getUserMedia({
-        audio: true,
-        video: true,
+        audio: { constraints: { deviceId: microphoneDeviceId } }, // loose constraint, will fail back if missing
+        video: { constraints: { deviceId: cameraDeviceId } }, // loose constraint, will fail back if missing
       });
     } catch (e) {
-      console.log("Failed to request default devices from Chrome.");
+      console.log("Failed to request default devices from your browser.");
     }
 
     try {
@@ -140,14 +146,22 @@ export const UserMediaProvider: React.FC<Props> = ({ children }) => {
             setMicrophoneDeviceId(track.deviceId);
           }
         }
-        track.track.stop();
       });
     } catch (e) {
       console.log("Error thrown while stopping devices.");
     }
 
     await loadDevices();
-  }, [setCameraDeviceId, setMicrophoneDeviceId]);
+
+    // Need to wait to stop the tracks until we've gotten the device list, or they'll have no labels
+    tracks.forEach((track) => track.track.stop());
+  }, [
+    cameraDeviceId,
+    loadDevices,
+    microphoneDeviceId,
+    setCameraDeviceId,
+    setMicrophoneDeviceId,
+  ]);
 
   const requestPermissionAndStartDevices = useCallback(
     async (microphoneDeviceId?: string, cameraDeviceId?: string) => {
@@ -201,6 +215,9 @@ export const UserMediaProvider: React.FC<Props> = ({ children }) => {
             if (track.deviceId) {
               setMicrophoneDeviceId(track.deviceId);
             }
+            if (userWantsMicMuted) {
+              track.mute();
+            }
             break;
           case TrackSource.Camera:
             setActiveCamera(track);
@@ -213,14 +230,19 @@ export const UserMediaProvider: React.FC<Props> = ({ children }) => {
 
       await loadDevices();
     },
-    [setupLocalMicrophoneAnalyser, setMicrophoneDeviceId, setCameraDeviceId]
+    [
+      setupLocalMicrophoneAnalyser,
+      setMicrophoneDeviceId,
+      setCameraDeviceId,
+      userWantsMicMuted,
+    ]
   );
 
   const muteActiveMicrophone = useCallback(() => {
     try {
       activeMicrophone?.mute();
     } catch (error) {
-      throw new Error("Select an active camera before muting.");
+      throw new Error("Select an active microphone before muting.");
     }
   }, [activeMicrophone]);
 
@@ -228,7 +250,7 @@ export const UserMediaProvider: React.FC<Props> = ({ children }) => {
     try {
       activeMicrophone?.unMute();
     } catch (error) {
-      throw new Error("Select an active camera before muting.");
+      throw new Error("Select an active microphone before muting.");
     }
   }, [activeMicrophone]);
 
@@ -277,13 +299,16 @@ export const UserMediaProvider: React.FC<Props> = ({ children }) => {
             if (track.deviceId) {
               setMicrophoneDeviceId(track.deviceId);
             }
+            if (userWantsMicMuted) {
+              track.mute();
+            }
             break;
         }
       });
 
       return tracks[0];
     },
-    [setupLocalMicrophoneAnalyser, setMicrophoneDeviceId]
+    [setupLocalMicrophoneAnalyser, setMicrophoneDeviceId, userWantsMicMuted]
   );
 
   const changeActiveMicrophone = useCallback(
@@ -389,6 +414,29 @@ export const UserMediaProvider: React.FC<Props> = ({ children }) => {
       setActiveCamera(undefined);
     }
   }, [activeCamera]);
+
+  const onDeviceChange = useCallback(async () => {
+    console.log("Detected device change, refreshing device list");
+    await loadDevices();
+  }, [loadDevices]);
+
+  useEffect(() => {
+    if (userWantsMicMuted && !activeMicrophone?.muted) {
+      activeMicrophone?.mute();
+    } else if (!userWantsMicMuted && activeMicrophone?.muted) {
+      activeMicrophone?.unMute();
+    }
+  }, [userWantsMicMuted, activeMicrophone]);
+
+  useEffect(() => {
+    navigator.mediaDevices.addEventListener("devicechange", onDeviceChange);
+    return () => {
+      navigator.mediaDevices.removeEventListener(
+        "devicechange",
+        onDeviceChange
+      );
+    };
+  }, [onDeviceChange]);
 
   return (
     <UserMediaContext.Provider
