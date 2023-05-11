@@ -6,6 +6,7 @@ import { useSpace } from "hooks/useSpace";
 import Controls from "./Controls";
 import Meeting from "./Meeting";
 import Notifications from "./Notifications";
+import { ChatProvider } from "context/Chat";
 
 const LoadingSpinner = () => {
   return (
@@ -24,10 +25,12 @@ export default function Stage(): JSX.Element {
   return (
     <>
       <Notifications />
-      <Center height="calc(100% - 80px)" zIndex={1}>
-        {!isJoined ? <LoadingSpinner /> : <Meeting />}
-      </Center>
-      <Controls />
+      <ChatProvider>
+        <Center height="calc(100% - 80px)" zIndex={1}>
+          {!isJoined ? <LoadingSpinner /> : <Meeting />}
+        </Center>
+        <Controls />
+      </ChatProvider>
     </>
   );
 }
