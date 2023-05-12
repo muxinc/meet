@@ -12,8 +12,6 @@ import SpaceContext from "./Space";
 import { v4 } from "uuid";
 import moment from "moment";
 
-const NUM_CHAT_MESSAGES = 100;
-
 interface ChatMessagePayloadValue {
   connectionId: string;
   name: string;
@@ -62,10 +60,6 @@ export const ChatProvider: React.FC<Props> = ({ children }) => {
   const [numUnreadMessages, setNumUnreadMessages] = useState(0);
   const [canSendMessage, setCanSendMessage] = useState(!!localParticipant);
 
-  const setChatMessageWithLimit = (chatMessages: ChatMessage[]) => {
-    setChatMessages(chatMessages.slice(-NUM_CHAT_MESSAGES));
-  };
-
   const sendChatMessage = useCallback(
     async (content: string) => {
       if (!localParticipant) {
@@ -92,7 +86,7 @@ export const ChatProvider: React.FC<Props> = ({ children }) => {
 
       const localChatMessage = { ...payload.value, id, state, time };
 
-      setChatMessageWithLimit([...chatMessages, localChatMessage]);
+      setChatMessages([...chatMessages, localChatMessage]);
 
       try {
         setCanSendMessage(false);
@@ -112,7 +106,7 @@ export const ChatProvider: React.FC<Props> = ({ children }) => {
             message.state = state;
           }
 
-          setChatMessageWithLimit([
+          setChatMessages([
             ...chatMessages.slice(0, messageIndex),
             { ...message },
             ...chatMessages.slice(messageIndex + 1),
@@ -142,7 +136,7 @@ export const ChatProvider: React.FC<Props> = ({ children }) => {
         const payload: { type: string; value: ChatMessagePayloadValue } =
           JSON.parse(customEvent.payload);
         if (participant !== localParticipant && payload.type === "chat") {
-          setChatMessageWithLimit([
+          setChatMessages([
             ...chatMessages,
             { ...payload.value, time: moment().format("hh:mm A") },
           ]);
