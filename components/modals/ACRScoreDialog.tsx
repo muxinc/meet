@@ -31,30 +31,29 @@ function RadioCard(props: RadioProps) {
       <input {...input} />
       <Box
         {...checkbox}
-        color="#666666"
+        color="#242628"
         fontSize="14px"
         cursor="pointer"
         borderWidth="1px"
-        borderRadius="2px"
-        borderColor="#CCCCCC"
+        borderRadius="5px"
+        borderColor="#B2BAC2"
         _checked={{
-          bg: "#444444",
+          background: "#3E4247",
           color: "white",
-          borderColor: "#444444",
+          borderColor: "#3E4247",
         }}
         _hover={
           !props.isChecked
             ? {
-                bg: "#F4F4F4",
-                color: "#666666",
+                borderColor: "#242628",
               }
             : {}
         }
         _focus={{
           boxShadow: "none",
         }}
-        px={3}
-        py={2}
+        px="20px"
+        py="10px"
       >
         {props.children}
       </Box>
@@ -110,8 +109,12 @@ export default function ACRScoreDialog({ isOpen, onClose }: Props) {
       >
         <AlertDialogOverlay />
 
-        <AlertDialogContent>
-          <AlertDialogHeader color="#666666" fontSize="18px" fontWeight="400">
+        <AlertDialogContent borderRadius="0px">
+          <AlertDialogHeader
+            color="#242628"
+            fontSize="18px"
+            fontWeight="normal"
+          >
             How was the call quality?
           </AlertDialogHeader>
           <AlertDialogCloseButton
@@ -121,7 +124,7 @@ export default function ACRScoreDialog({ isOpen, onClose }: Props) {
           />
           <Divider color="#E8E8E8" opacity={1} />
           <AlertDialogBody my="17px">
-            <VStack {...group} spacing="15px">
+            <VStack {...group} spacing="10px">
               {options.map((value) => {
                 const radio = getRadioProps({ value });
                 return (
@@ -133,52 +136,15 @@ export default function ACRScoreDialog({ isOpen, onClose }: Props) {
             </VStack>
           </AlertDialogBody>
           <AlertDialogFooter>
-            <Button
-              ref={cancelRef}
-              height="100%"
-              border="1px solid #E8E8E8"
-              borderRadius="3px"
-              fontSize="14px"
-              bg="white"
-              color="#666666"
-              fill="#666666"
-              flexDirection="row"
-              marginLeft="10px"
-              padding="10px 20px"
-              onClick={handleClose}
-              _hover={{
-                background: "#FFFFFF",
-                border: "1px solid #666666",
-                color: "#666666",
-                fill: "#666666",
-              }}
-            >
+            <Button ref={cancelRef} variant="muxDefault" onClick={handleClose}>
               Cancel
             </Button>
             <Button
+              variant="muxConfirmation"
               isLoading={submitting}
-              disabled={disableSubmission}
-              height="100%"
-              background="gradient"
-              border="1px solid white"
-              borderRadius="3px"
-              fontSize="14px"
-              color="white"
-              fill="white"
-              flexDirection="row"
-              marginLeft="10px"
-              padding="10px 20px"
+              isDisabled={disableSubmission}
               onClick={handleSubmittingAcrScore}
-              _hover={
-                disableSubmission
-                  ? {}
-                  : {
-                      background: "#FFFFFF",
-                      border: "1px solid #999999",
-                      color: "#666666",
-                      fill: "#666666",
-                    }
-              }
+              marginLeft="10px"
             >
               Submit
             </Button>

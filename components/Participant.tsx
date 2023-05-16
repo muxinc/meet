@@ -1,11 +1,13 @@
 import React, { useMemo } from "react";
 import { Box, Center, Flex } from "@chakra-ui/react";
 
+import UserContext from "context/User";
 import { useParticipant } from "hooks/useParticipant";
 
 import Pin from "./Pin";
 import VideoRenderer from "./renderers/VideoRenderer";
 import ParticipantInfoBar from "./ParticipantInfoBar";
+import ParticipantName from "./ParticipantName";
 
 interface Props {
   width?: number;
@@ -22,16 +24,14 @@ export default function Participant({
     id,
     isLocal,
     isSpeaking,
-    isMicrophoneMuted,
+    hasMicTrack,
+    isMicTrackMuted,
     isCameraOff,
     cameraWidth,
     cameraHeight,
-    attachCamera,
+    displayName,
+    attachVideoElement,
   } = useParticipant(connectionId);
-
-  const displayName = useMemo(() => {
-    return id.split("|")[0];
-  }, [id]);
 
   const outlineWidth = 3;
 
@@ -42,12 +42,9 @@ export default function Participant({
       minWidth="160px"
       minHeight="90px"
       background="black"
-      outline={`${
-        !isMicrophoneMuted && isSpeaking
-          ? `${outlineWidth}px solid`
-          : "1px solid"
-      }`}
-      outlineColor={`${!isMicrophoneMuted && isSpeaking ? "#FB2491" : "black"}`}
+      boxShadow={`0 0 0 ${
+        !isMicTrackMuted && isSpeaking ? outlineWidth : 1
+      }px ${!isMicTrackMuted && isSpeaking ? "#FA50B5" : "black"}`}
       borderRadius="5px"
       margin={`${outlineWidth}px`}
       overflow="hidden"
@@ -58,30 +55,20 @@ export default function Participant({
         local={isLocal}
         width={cameraWidth}
         height={cameraHeight}
-        attach={attachCamera}
+        attachFunc={attachVideoElement}
         connectionId={connectionId}
       />
 
       <ParticipantInfoBar
-        name={displayName}
-        isMuted={isMicrophoneMuted}
+        name={displayName || id}
+        isMuted={!hasMicTrack || isMicTrackMuted}
         parentHeight={height!}
       />
 
       {isCameraOff && (
-        <Center
-          background="black"
-          color="white"
-          fontSize="45px"
-          h="100%"
-          position="absolute"
-          top="0"
-          w="100%"
-        >
-          <Flex direction="column" textAlign="center">
-            <Box>{displayName}</Box>
-          </Flex>
-        </Center>
+        <ParticipantName isSmall={width! <= 400}>
+          {displayName || id}
+        </ParticipantName>
       )}
 
       {!isLocal && <Pin connectionId={connectionId} />}

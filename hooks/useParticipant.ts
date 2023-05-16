@@ -1,6 +1,13 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   LocalParticipant,
+  LocalTrack,
   ParticipantEvent,
   RemoteParticipant,
   Track,
@@ -8,17 +15,20 @@ import {
 } from "@mux/spaces-web";
 
 import SpaceContext from "../context/Space";
+import UserContext from "../context/User";
 
 export interface Participant {
   id: string;
   isLocal: boolean;
   isSpeaking: boolean;
-  isMicrophoneMuted: boolean;
+  hasMicTrack: boolean;
+  isMicTrackMuted: boolean;
   isCameraOff: boolean;
   cameraWidth: number;
   cameraHeight: number;
-  attachCamera: (element: HTMLVideoElement) => void;
-  attachMicrophone: (element: HTMLAudioElement) => void;
+  displayName: string;
+  attachVideoElement: (element: HTMLVideoElement) => void;
+  attachAudioElement: (element: HTMLAudioElement) => void;
 }
 
 export function useParticipant(connectionId: string): Participant {
@@ -45,17 +55,20 @@ export function useParticipant(connectionId: string): Participant {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [cameraTrack, setCameraTrack] = useState<Track>();
   const [microphoneTrack, setMicrophoneTrack] = useState<Track>();
-  const [isMicrophoneMuted, setMicrophoneMuted] = useState(false);
+  const [isMicTrackMuted, setIsMicTrackMuted] = useState(false);
+  const [isCameraOff, setIsCameraOff] = useState(true);
+  const [displayName, setDisplayName] = useState(participant.displayName);
+  const { userWantsMicMuted } = React.useContext(UserContext);
 
-  const isCameraOff = useMemo(() => {
-    return !!!cameraTrack;
-  }, [cameraTrack]);
+  const hasMicTrack = useMemo(() => {
+    return !!microphoneTrack;
+  }, [microphoneTrack]);
 
   const cameraDimensions = useMemo(() => {
     return { width: cameraTrack?.width || 0, height: cameraTrack?.height || 0 };
   }, [cameraTrack]);
 
-  const attachCamera = useCallback(
+  const attachVideoElement = useCallback(
     (element: HTMLVideoElement) => {
       cameraTrack?.attachedElements.forEach((attachedEl) =>
         cameraTrack.detach(attachedEl)
@@ -65,7 +78,7 @@ export function useParticipant(connectionId: string): Participant {
     [cameraTrack]
   );
 
-  const attachMicrophone = useCallback(
+  const attachAudioElement = useCallback(
     (element: HTMLAudioElement) => {
       microphoneTrack?.attachedElements.forEach((attachedEl) =>
         microphoneTrack.detach(attachedEl)
@@ -80,11 +93,15 @@ export function useParticipant(connectionId: string): Participant {
       if (track.hasMedia()) {
         if (track.source === TrackSource.Camera) {
           setCameraTrack(track);
+          setIsCameraOff(track.isMuted());
         }
         if (track.source === TrackSource.Microphone) {
           setMicrophoneTrack(track);
+          if (isLocal && userWantsMicMuted) {
+            (track as LocalTrack).mute();
+          }
           if (track.isMuted()) {
-            setMicrophoneMuted(true);
+            setIsMicTrackMuted(true);
           }
         }
       }
@@ -92,10 +109,15 @@ export function useParticipant(connectionId: string): Participant {
     [setCameraTrack, setMicrophoneTrack]
   );
 
+  const handleSetDisplayName = useCallback(() => {
+    setDisplayName(participant ? participant.displayName : "");
+  }, [setDisplayName]);
+
   const handleTrackRemoved = useCallback(
     (track: Track) => {
       if (track.source === TrackSource.Camera) {
         setCameraTrack(undefined);
+        setIsCameraOff(true);
       }
       if (track.source === TrackSource.Microphone) {
         setMicrophoneTrack(undefined);
@@ -105,16 +127,30 @@ export function useParticipant(connectionId: string): Participant {
   );
 
   useEffect(() => {
+    if (isLocal && microphoneTrack instanceof LocalTrack) {
+      if (userWantsMicMuted && !microphoneTrack.muted) {
+        microphoneTrack.mute();
+      } else if (!userWantsMicMuted && microphoneTrack.muted) {
+        microphoneTrack.unMute();
+      }
+    }
+  }, [userWantsMicMuted, isLocal, microphoneTrack]);
+
+  useEffect(() => {
     if (!participant) return;
 
     const onMuted = (track: Track) => {
       if (track.source == TrackSource.Microphone) {
-        setMicrophoneMuted(true);
+        setIsMicTrackMuted(true);
+      } else if (track.source == TrackSource.Camera) {
+        setIsCameraOff(true);
       }
     };
     const onUnmuted = (track: Track) => {
       if (track.source == TrackSource.Microphone) {
-        setMicrophoneMuted(false);
+        setIsMicTrackMuted(false);
+      } else if (track.source == TrackSource.Camera) {
+        setIsCameraOff(false);
       }
     };
     const onSpeaking = () => {
@@ -132,6 +168,7 @@ export function useParticipant(connectionId: string): Participant {
     participant.on(ParticipantEvent.TrackUnpublished, handleTrackRemoved);
     participant.on(ParticipantEvent.TrackSubscribed, handleTrackAdded);
     participant.on(ParticipantEvent.TrackUnsubscribed, handleTrackRemoved);
+    participant.on(ParticipantEvent.DisplayNameChanged, handleSetDisplayName);
 
     participant.getAudioTracks().forEach((track) => {
       handleTrackAdded(track);
@@ -151,6 +188,10 @@ export function useParticipant(connectionId: string): Participant {
       participant.off(ParticipantEvent.TrackUnpublished, handleTrackRemoved);
       participant.off(ParticipantEvent.TrackSubscribed, handleTrackAdded);
       participant.off(ParticipantEvent.TrackUnsubscribed, handleTrackRemoved);
+      participant.off(
+        ParticipantEvent.DisplayNameChanged,
+        handleSetDisplayName
+      );
     };
   }, [participant, handleTrackAdded, handleTrackRemoved]);
 
@@ -159,10 +200,12 @@ export function useParticipant(connectionId: string): Participant {
     isLocal,
     isSpeaking,
     isCameraOff,
-    isMicrophoneMuted,
+    hasMicTrack,
+    isMicTrackMuted,
     cameraWidth: cameraDimensions.width,
     cameraHeight: cameraDimensions.height,
-    attachCamera,
-    attachMicrophone,
+    displayName,
+    attachVideoElement,
+    attachAudioElement,
   };
 }

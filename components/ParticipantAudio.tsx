@@ -9,9 +9,9 @@ interface Props {
 }
 
 const ParticipantAudio = ({ connectionId }: Props) => {
-  const { isLocal, attachMicrophone } = useParticipant(connectionId);
+  const { isLocal, attachAudioElement } = useParticipant(connectionId);
 
-  return !isLocal ? <AudioRenderer attach={attachMicrophone} /> : null;
+  return !isLocal ? <AudioRenderer attachFunc={attachAudioElement} /> : null;
 };
 
 export default ParticipantAudio;

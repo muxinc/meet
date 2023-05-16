@@ -1,7 +1,106 @@
 import localFont from "@next/font/local";
-import { extendTheme } from "@chakra-ui/react";
+import { extendTheme, defineStyle } from "@chakra-ui/react";
 
-const akkuratFont = localFont({ src: "./Akkurat-Regular.woff2" });
+const akkuratFont = localFont({
+  src: "./Akkurat-Regular.woff2",
+});
+
+const baseMuxButtonStyles = {
+  height: "40px",
+  borderRadius: "20px",
+  padding: "10px 20px 10px 20px",
+  borderWidth: "1px",
+  fontSize: "14px",
+};
+
+const control = defineStyle({
+  background: "#0a0a0b",
+  width: "60px",
+  height: "60px",
+  border: "1px solid #3E4247",
+  borderRadius: "50%",
+  _hover: {
+    background: "#242628",
+    border: "1px solid #FFFFFF",
+  },
+  _active: {
+    background: "#3E4247",
+    border: "1px solid #FFFFFF",
+  },
+});
+
+const controlMenu = defineStyle({
+  background: "#707C89",
+  width: "20px",
+  height: "20px",
+  border: "1px solid #565E67",
+  borderRadius: "50%",
+  fontWeight: "bold",
+  _hover: {
+    background: "#3E4247",
+    border: "1px solid #FFFFFF",
+  },
+  _active: {
+    background: "#3E4247",
+    border: "1px solid #FFFFFF",
+  },
+});
+
+const muxDefault = defineStyle({
+  ...baseMuxButtonStyles,
+  background: "#FFFFFF",
+  borderColor: "#808C99",
+  fontWeight: "normal",
+  _hover: {
+    borderColor: "#242628",
+  },
+  _active: {
+    background: "#F3F5F6",
+    borderColor: "#242628",
+  },
+});
+
+const muxConfirmation = defineStyle({
+  ...baseMuxButtonStyles,
+  background: "#00AA3C",
+  borderColor: "#00802D",
+  color: "#FFFFFF",
+  _hover: {
+    background: "#00802D",
+    borderColor: "#005C20",
+    _disabled: {
+      fontWeight: "normal",
+      background: "#E5E8EB",
+      borderColor: "#E5E8EB",
+      color: "#707C89",
+    },
+  },
+  _active: {
+    background: "#005C20",
+    borderColor: "#003D16",
+  },
+  _disabled: {
+    fontWeight: "normal",
+    background: "#E5E8EB",
+    borderColor: "#E5E8EB",
+    color: "#707C89",
+  },
+});
+
+const muxDestructive = defineStyle({
+  ...baseMuxButtonStyles,
+  background: "#FDA89B",
+  borderColor: "#F87B6D",
+  fontWeight: "bold",
+  _hover: {
+    borderColor: "#F85C54",
+    background: "#F87B6D",
+  },
+  _active: {
+    borderColor: "#EA3737",
+    background: "#F85C54",
+  },
+});
 
 export const theme = extendTheme({
   fonts: {
@@ -65,7 +164,6 @@ export const theme = extendTheme({
       700: "#490072",
       800: "#330050",
     },
-
     orange: {
       50: "#FB501D",
       100: "#DF491E",
@@ -90,6 +188,16 @@ export const theme = extendTheme({
           },
         },
       },
+    },
+    Button: {
+      variants: {
+        control,
+        controlMenu,
+        muxDefault,
+        muxConfirmation,
+        muxDestructive,
+      },
+      baseStyle: { transition: "none" },
     },
   },
 });

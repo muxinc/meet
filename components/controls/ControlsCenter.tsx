@@ -5,22 +5,25 @@ import MicrophoneButton from "./buttons/MicrophoneButton";
 import CameraButton from "./buttons/CameraButton";
 import ScreenShareButton from "./buttons/ScreenShareButton";
 import SettingsButton from "./buttons/SettingsButton";
+import ChatButton from "./buttons/ChatButton";
+import useWindowDimensions from "hooks/useWindowDimension";
+import { useSpace } from "hooks/useSpace";
 
 interface Props {
   onLeave: () => void;
-  onRename: (newName: string) => void;
 }
 
-export default function ControlsCenter({
-  onLeave,
-  onRename,
-}: Props): JSX.Element {
+export default function ControlsCenter({ onLeave }: Props): JSX.Element {
+  const { width = 0 } = useWindowDimensions();
+  const { isLocalScreenShareSupported } = useSpace();
+
   return (
-    <HStack>
+    <HStack spacing="24px">
       <MicrophoneButton />
       <CameraButton />
-      <ScreenShareButton />
-      <SettingsButton onLeave={onLeave} onRename={onRename} />
+      {isLocalScreenShareSupported && <ScreenShareButton />}
+      {width > 800 && <ChatButton />}
+      <SettingsButton onLeave={onLeave} />
     </HStack>
   );
 }

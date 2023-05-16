@@ -21,7 +21,13 @@ export default function Header(): JSX.Element {
           target="_blank"
           rel="noreferrer"
         >
-          <Image priority alt="logo" width={150} height={35} src={muxLogo} />
+          <Image
+            priority
+            alt="logo"
+            width={150}
+            src={muxLogo}
+            style={{ height: "auto" }}
+          />
         </a>
       </Flex>
       <Spacer />

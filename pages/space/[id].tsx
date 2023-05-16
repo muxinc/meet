@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation } from "react-query";
 import Head from "next/head";
 import Image from "next/image";
@@ -46,6 +46,7 @@ const SpacePage: NextPage<Props> = ({
   const user = React.useContext(UserContext);
   const { joinSpace, leaveSpace } = useSpace();
   const [canJoinSpace, setCanJoinSpace] = useState(true);
+  const participantNameRef = useRef<string>("");
 
   useEffect(() => {
     setCanJoinSpace((endsAt && moment(endsAt).diff(moment()) > 0) || !endsAt);
@@ -62,7 +63,11 @@ const SpacePage: NextPage<Props> = ({
 
   const mutation = useMutation(tokenPOST, {
     onSuccess: async (data) => {
-      await joinSpace(data.spaceJWT, endsAt);
+      await joinSpace(
+        data.spaceJWT,
+        endsAt,
+        participantNameRef.current || user.participantName
+      );
     },
   });
 
@@ -78,28 +83,14 @@ const SpacePage: NextPage<Props> = ({
 
   const handleJoin = useCallback(() => {
     if (typeof id === "string" && canJoinSpace) {
-      authenticate(id, user.participantId);
+      authenticate(id, `${participantNameRef.current}|${user.id}`);
     }
-  }, [id, canJoinSpace, authenticate, user.participantId]);
-
-  const rejoinAs = useCallback(
-    (participantId: string) => {
-      if (typeof id === "string" && canJoinSpace) {
-        leaveSpace();
-        authenticate(id, participantId);
-      }
-    },
-    [id, canJoinSpace, leaveSpace, authenticate]
-  );
+  }, [id, canJoinSpace, authenticate, user.id]);
 
   useEffect(() => {
     if (!isRouterReady) return;
     if (!id || Array.isArray(id)) {
       console.warn("No space selected");
-      return;
-    }
-    if (!user.participantName) {
-      router.replace({ pathname: "/" });
       return;
     }
     router.events.on("routeChangeStart", leaveSpace);
@@ -143,9 +134,12 @@ const SpacePage: NextPage<Props> = ({
 
         {/* required to handle auto play https://developer.chrome.com/blog/autoplay/ */}
         {user.interactionRequired ? (
-          <UserInteractionPrompt onInteraction={handleJoin} />
+          <UserInteractionPrompt
+            onInteraction={handleJoin}
+            participantNameRef={participantNameRef}
+          />
         ) : (
-          <Stage rejoinCallback={rejoinAs} />
+          <Stage />
         )}
       </Flex>
     </>

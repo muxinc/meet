@@ -1,18 +1,18 @@
 import { useEffect, useRef } from "react";
 
 interface AudioTrackProps {
-  attach: (element: HTMLAudioElement) => void;
+  attachFunc: (element: HTMLAudioElement) => void;
 }
 
-const AudioRenderer = ({ attach }: AudioTrackProps) => {
+const AudioRenderer = ({ attachFunc }: AudioTrackProps) => {
   const audioEl = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const el = audioEl.current;
     if (!el) return;
 
-    attach(el);
-  }, [attach]);
+    attachFunc(el);
+  }, [attachFunc]);
 
   return <audio ref={audioEl} autoPlay />;
 };

@@ -1,15 +1,16 @@
 import React from "react";
 import Image from "next/image";
 
-import screenShareOn from "../../public/screenShareOn.svg";
+import chat from "../../public/chat.svg";
 
-export default function ScreenShareOnIcon() {
+export default function ChatIcon(): JSX.Element {
   return (
     <Image
-      alt="screen share on"
+      priority
+      alt="toggle chat"
       width={25}
       height={25}
-      src={screenShareOn}
+      src={chat}
       style={{ width: "25px", height: "25px" }}
     />
   );

@@ -75,7 +75,7 @@ export default function CameraButton(): JSX.Element {
   const ariaLabel = cameraOff ? "Unhide" : "Hide";
 
   return (
-    <ButtonGroup size="sm" isAttached variant="outline">
+    <ButtonGroup position="relative">
       <Tooltip
         label={
           cameraOff
@@ -84,54 +84,56 @@ export default function CameraButton(): JSX.Element {
         }
       >
         <IconButton
-          width="60px"
-          height="60px"
-          variant="link"
+          variant="control"
           aria-label={ariaLabel}
           icon={cameraOff ? <UnmuteCameraIcon /> : <MuteCameraIcon />}
           onClick={toggleCamera}
-          _hover={{
-            background:
-              "radial-gradient(50% 50% at 50% 50%, rgba(251, 36, 145, 0.6) 0%, rgba(251, 36, 145, 0) 100%);",
-          }}
         />
       </Tooltip>
       <Menu placement="top">
-        <MenuButton
-          as={IconButton}
-          aria-label="Options"
-          icon={<ChevronIcon />}
-          variant="link"
-          marginLeft="-16px"
-          zIndex={100}
-        />
-        <MenuList
-          background="#383838"
-          border="1px solid #323232"
-          color="#CCCCCC"
-          padding="5px 10px"
-        >
-          <Text userSelect="none" paddingX="12px" paddingY="6px">
-            CAMERA
-          </Text>
-          {cameraDevices.map((device) => {
-            return (
-              <MenuItem
-                key={device.deviceId}
-                onClick={() => selectCameraDevice(device.deviceId)}
-              >
-                <Flex alignItems="center">
-                  {device.label}
-                  {cameraDeviceId === device.deviceId && (
-                    <Box marginLeft="10px">
-                      <AiOutlineCheck />
-                    </Box>
-                  )}
-                </Flex>
-              </MenuItem>
-            );
-          })}
-        </MenuList>
+        {({ isOpen }) => (
+          <>
+            <MenuButton
+              position="absolute"
+              top="0"
+              right="0"
+              as={IconButton}
+              variant="controlMenu"
+              aria-label="Options"
+              icon={<ChevronIcon />}
+              zIndex={100}
+              minWidth="20px"
+              {...(isOpen && { transform: "rotate(180deg)" })}
+            />
+            <MenuList
+              background="#383838"
+              border="1px solid #323232"
+              color="#CCCCCC"
+              padding="5px 10px"
+            >
+              <Text userSelect="none" paddingX="12px" paddingY="6px">
+                CAMERA
+              </Text>
+              {cameraDevices.map((device) => {
+                return (
+                  <MenuItem
+                    key={device.deviceId}
+                    onClick={() => selectCameraDevice(device.deviceId)}
+                  >
+                    <Flex alignItems="center">
+                      {device.label}
+                      {cameraDeviceId === device.deviceId && (
+                        <Box marginLeft="10px">
+                          <AiOutlineCheck />
+                        </Box>
+                      )}
+                    </Flex>
+                  </MenuItem>
+                );
+              })}
+            </MenuList>
+          </>
+        )}
       </Menu>
     </ButtonGroup>
   );

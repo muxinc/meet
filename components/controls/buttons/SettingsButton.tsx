@@ -12,7 +12,6 @@ import {
 import { useRouter } from "next/router";
 
 import { copyLinkToastConfig, ToastIds } from "shared/toastConfigs";
-
 import { useSpace } from "hooks/useSpace";
 import useWindowDimensions from "hooks/useWindowDimension";
 
@@ -21,13 +20,9 @@ import RenameParticipantModal from "components/modals/RenameParticipantModal";
 
 interface Props {
   onLeave: () => void;
-  onRename: (newName: string) => void;
 }
 
-export default function SettingsButton({
-  onLeave,
-  onRename,
-}: Props): JSX.Element {
+export default function SettingsButton({ onLeave }: Props): JSX.Element {
   const toast = useToast();
   const router = useRouter();
   const { width } = useWindowDimensions();
@@ -39,7 +34,6 @@ export default function SettingsButton({
     onClose: onRenameModalClose,
   } = useDisclosure();
 
-  const mediumWindowWidth = (width && width < 930) || false;
   const smallWindowWidth = (width && width < 480) || false;
 
   const shareLink = () => {
@@ -54,24 +48,16 @@ export default function SettingsButton({
   return (
     <>
       <RenameParticipantModal
-        onRename={onRename}
         isOpen={isRenameModalOpen}
         onClose={onRenameModalClose}
       />
       <Box>
         <Menu placement="top">
           <MenuButton
-            left="-10px"
-            width="60px"
-            height="60px"
             as={IconButton}
+            variant="control"
             aria-label="Options"
             icon={<SettingsIcon />}
-            variant="link"
-            _hover={{
-              background:
-                "radial-gradient(50% 50% at 50% 50%, rgba(251, 36, 145, 0.6) 0%, rgba(251, 36, 145, 0) 100%);",
-            }}
           />
           <MenuList
             background="#383838"
@@ -83,9 +69,7 @@ export default function SettingsButton({
             <MenuItem disabled={isLocalScreenShare} onClick={onRenameModalOpen}>
               Change Name
             </MenuItem>
-            {mediumWindowWidth && (
-              <MenuItem onClick={shareLink}>Copy Invite Link</MenuItem>
-            )}
+            <MenuItem onClick={shareLink}>Copy Invite Link</MenuItem>
             {smallWindowWidth && <MenuItem onClick={onLeave}>Leave</MenuItem>}
           </MenuList>
         </Menu>

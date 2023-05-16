@@ -1,32 +1,34 @@
 import React from "react";
-import { Button, Flex, Text, useToast } from "@chakra-ui/react";
-import { useRouter } from "next/router";
-
-import useWindowDimensions from "hooks/useWindowDimension";
-
+import { Button, Flex, Text } from "@chakra-ui/react";
 import LeaveIcon from "components/icons/LeaveIcon";
-
-import { copyLinkToastConfig, ToastIds } from "shared/toastConfigs";
+import SpaceContext from "context/Space";
+import styled from "@emotion/styled";
+import useWindowDimensions from "hooks/useWindowDimension";
 
 interface Props {
   onLeave: () => void;
 }
 
+const ParticipantsLabel = styled.span`
+  color: #cccccc;
+  font-size: 12px;
+  line-height: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+`;
+
+const ParticipantCount = styled.span`
+  font-size: 21px;
+  line-height: 21px;
+  letter-spacing: -0.5px;
+  margin-top: 5px;
+`;
+
 export default function ControlsRight({ onLeave }: Props): JSX.Element {
+  const { participantCount } = React.useContext(SpaceContext);
+
   const { width } = useWindowDimensions();
-  const router = useRouter();
-  const toast = useToast();
-
-  const shareLink = () => {
-    navigator.clipboard.writeText(
-      `${window.location.protocol}//${window.location.host}/space/${router.query["id"]}`
-    );
-    if (!toast.isActive(ToastIds.COPY_LINK_TOAST_ID)) {
-      toast(copyLinkToastConfig);
-    }
-  };
-
-  const hideCopyInviteLink = (width && width < 930) || false;
+  const hideParticipantCount = (width && width < 1000) || false;
 
   return (
     <Flex
@@ -36,43 +38,30 @@ export default function ControlsRight({ onLeave }: Props): JSX.Element {
       height="46px"
     >
       <Button
-        height="100%"
-        background="gradient"
-        border="1px solid #666666"
-        borderRadius="3px"
-        color="white"
+        variant="muxDestructive"
         display={{ base: "none", sm: "flex" }}
-        fill="white"
         flexDirection="row"
-        marginLeft="10px"
+        marginLeft="30px"
         padding="10px 20px"
         onClick={onLeave}
-        _hover={{
-          background: "#FFFFFF",
-          border: "1px solid #999999",
-          color: "#666666",
-          fill: "#666666",
-        }}
       >
         <LeaveIcon />
         <Text paddingLeft="10px">Leave</Text>
       </Button>
-      <Button
-        height="100%"
-        hidden={hideCopyInviteLink}
-        variant="ghost"
-        border="1px solid #666666"
-        borderRadius="3px"
-        color="#CCCCCC"
-        display={{ base: "none", md: "flex" }}
-        onClick={shareLink}
-        padding="10px 20px"
-        _hover={{
-          border: "1px solid #CCCCCC",
-        }}
+      <Flex
+        alignItems="center"
+        direction="column"
+        color="white"
+        fontWeight="bold"
+        marginTop="2px"
       >
-        Copy invite link
-      </Button>
+        {!hideParticipantCount && (
+          <>
+            <ParticipantsLabel>Participants</ParticipantsLabel>
+            <ParticipantCount>{participantCount}</ParticipantCount>
+          </>
+        )}
+      </Flex>
     </Flex>
   );
 }

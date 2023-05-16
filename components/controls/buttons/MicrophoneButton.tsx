@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Box,
-  ButtonGroup,
   Flex,
   IconButton,
   Menu,
@@ -10,6 +9,7 @@ import {
   MenuList,
   Tooltip,
   Text,
+  ButtonGroup,
 } from "@chakra-ui/react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { AiOutlineCheck } from "react-icons/ai";
@@ -24,8 +24,8 @@ import UnmuteMicrophoneIcon from "components/icons/UnmuteMicrophoneIcon";
 
 export default function MicrophoneButton(): JSX.Element {
   const {
-    microphoneMuted,
-    setMicrophoneMuted,
+    userWantsMicMuted,
+    setUserWantsMicMuted,
     microphoneDeviceId,
     setMicrophoneDeviceId,
   } = React.useContext(UserContext);
@@ -54,16 +54,16 @@ export default function MicrophoneButton(): JSX.Element {
   );
 
   const toggleMicrophone = useCallback(() => {
-    if (microphoneMuted) {
-      setMicrophoneMuted(false);
+    if (userWantsMicMuted) {
+      setUserWantsMicMuted(false);
       unMuteActiveMicrophone();
     } else {
-      setMicrophoneMuted(true);
+      setUserWantsMicMuted(true);
       muteActiveMicrophone();
     }
   }, [
-    microphoneMuted,
-    setMicrophoneMuted,
+    userWantsMicMuted,
+    setUserWantsMicMuted,
     muteActiveMicrophone,
     unMuteActiveMicrophone,
   ]);
@@ -112,101 +112,106 @@ export default function MicrophoneButton(): JSX.Element {
   useHotkeys(
     "space",
     () => {
-      if (microphoneMuted && !temporaryUnmute) {
+      if (userWantsMicMuted && !temporaryUnmute) {
         unMuteActiveMicrophone();
         setTemporaryUnmute(true);
       }
     },
     { keydown: true, preventDefault: true },
-    [unMuteActiveMicrophone, microphoneMuted, temporaryUnmute]
+    [unMuteActiveMicrophone, userWantsMicMuted, temporaryUnmute]
   );
   useHotkeys(
     "space",
     () => {
       if (temporaryUnmute) {
         setTemporaryUnmute(false);
-        if (microphoneMuted) {
+        if (userWantsMicMuted) {
           muteActiveMicrophone();
         }
       }
     },
     { keyup: true, preventDefault: true },
-    [muteActiveMicrophone, microphoneMuted, temporaryUnmute]
+    [muteActiveMicrophone, userWantsMicMuted, temporaryUnmute]
   );
 
-  const ariaLabel = microphoneMuted ? "Unmute" : "Mute";
+  const ariaLabel = userWantsMicMuted ? "Unmute" : "Mute";
 
   return (
-    <ButtonGroup size="sm" isAttached variant="outline">
+    <ButtonGroup position="relative">
       <Tooltip
         label={
-          microphoneMuted ? `Unmute (${hotkeyText})` : `Mute (${hotkeyText})`
+          userWantsMicMuted ? `Unmute (${hotkeyText})` : `Mute (${hotkeyText})`
         }
       >
         <IconButton
-          width="60px"
-          height="60px"
-          variant="link"
+          variant="control"
           aria-label={ariaLabel}
           onMouseEnter={() => setMouseOver(true)}
           onMouseLeave={() => setMouseOver(false)}
           icon={
-            microphoneMuted && !temporaryUnmute ? (
+            userWantsMicMuted && !temporaryUnmute ? (
               <MuteMicrophoneIcon />
             ) : (
               <UnmuteMicrophoneIcon />
             )
           }
           onClick={toggleMicrophone}
-          style={
-            mouseOver || micDistorted
+          {...(isJoined &&
+            (micDistorted
               ? {
-                  background:
-                    "radial-gradient(50% 50% at 50% 50%, rgba(251, 36, 145, 0.6) 0%, rgba(251, 36, 145, 0) 100%)",
+                  background: `radial-gradient(50% 50% at 50% 50%, rgba(255, 92, 56, 0.75) 0%, rgba(255, 92, 56, 0) ${micLevelPercent}%)`,
                 }
               : {
-                  background: `radial-gradient(50% 50% at 50% 50%, rgba(36, 251, 40, 0.6) 0%, rgba(36, 251, 40, 0) ${micLevelPercent}%)`,
-                }
-          }
+                  background: `radial-gradient(50% 50% at 50% 50%, rgba(27, 227, 73, 0.75) 0%, rgba(27, 227, 73, 0) ${micLevelPercent}%)`,
+                }))}
         />
       </Tooltip>
       <Menu placement="top">
-        <MenuButton
-          as={IconButton}
-          aria-label="Options"
-          icon={<ChevronIcon />}
-          variant="link"
-          marginLeft="-16px"
-          zIndex={100}
-        />
-        <MenuList
-          background="#383838"
-          border="1px solid #323232"
-          color="#CCCCCC"
-          padding="5px 10px"
-        >
-          <Text userSelect="none" paddingX="12px" paddingY="6px">
-            MICROPHONE
-          </Text>
-          {microphoneDevices.map((device: MediaDeviceInfo) => {
-            return (
-              <MenuItem
-                key={device.deviceId}
-                onClick={() => selectAudioDevice(device.deviceId)}
-              >
-                <Flex alignItems="center">
-                  {device.label}
-                  {microphoneDeviceId == device.deviceId && (
-                    <Box marginLeft="10px">
-                      <AiOutlineCheck />
-                    </Box>
-                  )}
-                </Flex>
-              </MenuItem>
-            );
-          })}
-        </MenuList>
+        {({ isOpen }) => (
+          <>
+            <MenuButton
+              position="absolute"
+              top="0px"
+              right="0px"
+              zIndex={100}
+              as={IconButton}
+              aria-label="Options"
+              icon={<ChevronIcon />}
+              variant="controlMenu"
+              minWidth="20px"
+              {...(isOpen && { transform: "rotate(180deg)" })}
+            />
+            <MenuList
+              background="#383838"
+              border="1px solid #323232"
+              color="#CCCCCC"
+              padding="5px 10px"
+            >
+              <Text userSelect="none" paddingX="12px" paddingY="6px">
+                MICROPHONE
+              </Text>
+              {microphoneDevices.map((device: MediaDeviceInfo) => {
+                return (
+                  <MenuItem
+                    key={device.deviceId}
+                    onClick={() => selectAudioDevice(device.deviceId)}
+                  >
+                    <Flex alignItems="center">
+                      {device.label}
+                      {microphoneDeviceId == device.deviceId && (
+                        <Box marginLeft="10px">
+                          <AiOutlineCheck />
+                        </Box>
+                      )}
+                    </Flex>
+                  </MenuItem>
+                );
+              })}
+            </MenuList>
+          </>
+        )}
       </Menu>
+      ;
     </ButtonGroup>
   );
 }

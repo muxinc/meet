@@ -9,11 +9,7 @@ import ControlsLeft from "./controls/ControlsLeft";
 import ControlsCenter from "./controls/ControlsCenter";
 import ACRScoreDialog from "./modals/ACRScoreDialog";
 
-interface Props {
-  renameCallback: (newName: string) => void;
-}
-
-export default function Controls({ renameCallback }: Props): JSX.Element {
+export default function Controls(): JSX.Element {
   const router = useRouter();
   const { leaveSpace } = useSpace();
   const { isOpen: isACRScoreDialogOpen, onOpen: onACRScoreDialogOpen } =
@@ -38,7 +34,7 @@ export default function Controls({ renameCallback }: Props): JSX.Element {
       <ACRScoreDialog isOpen={isACRScoreDialogOpen} onClose={leaveSpacePage} />
       <Flex
         alignItems="center"
-        backgroundColor="#383838"
+        backgroundColor="#0a0a0b"
         bottom="0px"
         flexDirection="row"
         height={{ base: "60px", sm: "80px" }}
@@ -50,8 +46,12 @@ export default function Controls({ renameCallback }: Props): JSX.Element {
         zIndex={1000}
       >
         <ControlsLeft />
-        <ControlsCenter onLeave={promptForACR} onRename={renameCallback} />
-        <ControlsRight onLeave={promptForACR} />
+        {!isACRScoreDialogOpen && (
+          <>
+            <ControlsCenter onLeave={promptForACR} />
+            <ControlsRight onLeave={promptForACR} />
+          </>
+        )}
       </Flex>
     </>
   );
