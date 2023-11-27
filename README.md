@@ -1,5 +1,8 @@
 # Mux Meet
 
+> [!WARNING]
+> Mux Real-Time Video has been sunset and is unavailable for new usage. Existing access will end on December 31, 2023. [We recommend migrating your application to our partner, LiveKit](https://livekit.io/mux-livekit). Please contact [Mux Support](https://mux.com/support) if you need more help or details. Mux Meet is no-longer maintained and the repository will soon be archived.
+
 Mux Meet is a video conferencing app powered by [Mux Real-Time Video](https://mux.com/real-time-video), written in React, using the [Next.js](https://nextjs.org/) framework.
 
 ![Four users in a Mux Meet call](https://user-images.githubusercontent.com/1211390/216212346-b319d137-0d2e-405a-bbab-703cc32763b3.jpg)
@@ -10,7 +13,7 @@ In order for Meet to connect to Mux's APIs, an access token and signing key must
 
 The easiest way to use Mux Meet is to deploy it to Vercel.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?demo-title=Mux%20Meet&demo-description=Real-time%20conferencing%20(meeting)%20SaaS%20app%2C%20built%20with%20Next.js%2C%20Mux%2C%20and%20Vercel&demo-url=https%3A%2F%2Fmuxmeet.vercel.app%2F&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F7ISNSvmomH7w7KUPCy8gn0%2F97ab315dcd21aa1d4b23e54dc123b562%2Fmux-meet.png&project-name=Mux%20Meet&repository-name=mux-meet&repository-url=https%3A%2F%2Fgithub.com%2Fmuxinc%2Fmeet&from=templates&skippable-integrations=1&env=MUX_TOKEN_ID%2CMUX_TOKEN_SECRET%2CMUX_SIGNING_KEY%2CMUX_PRIVATE_KEY&envDescription=How%20to%20get%20these%20env%20variables%3A&envLink=https%3A%2F%2Fgithub.com%2Fmuxinc%2Fmeet%23getting-started)
+[![Deploy with Vercel](https://vercel.com/button)](<https://vercel.com/new/clone?demo-title=Mux%20Meet&demo-description=Real-time%20conferencing%20(meeting)%20SaaS%20app%2C%20built%20with%20Next.js%2C%20Mux%2C%20and%20Vercel&demo-url=https%3A%2F%2Fmuxmeet.vercel.app%2F&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F7ISNSvmomH7w7KUPCy8gn0%2F97ab315dcd21aa1d4b23e54dc123b562%2Fmux-meet.png&project-name=Mux%20Meet&repository-name=mux-meet&repository-url=https%3A%2F%2Fgithub.com%2Fmuxinc%2Fmeet&from=templates&skippable-integrations=1&env=MUX_TOKEN_ID%2CMUX_TOKEN_SECRET%2CMUX_SIGNING_KEY%2CMUX_PRIVATE_KEY&envDescription=How%20to%20get%20these%20env%20variables%3A&envLink=https%3A%2F%2Fgithub.com%2Fmuxinc%2Fmeet%23getting-started>)
 
 After creating your project, you will be prompted to configure it.
 
