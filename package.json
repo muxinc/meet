@@ -1,5 +1,5 @@
 {
-  "name": "mux-meet-nextjs",
+  "name": "@mux/mux-meet-nextjs",
   "private": true,
   "scripts": {
     "dev": "next dev",
